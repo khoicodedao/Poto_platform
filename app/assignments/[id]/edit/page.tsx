@@ -55,13 +55,18 @@ export default function EditAssignmentPage() {
     setIsLoading(true)
 
     try {
-      const result = await updateAssignment(assignmentId, {
+      const updateData: any = {
         title: formData.title,
         description: formData.description,
         classId: formData.classId,
-        dueDate: formData.dueDate ? new Date(formData.dueDate) : new Date(),
         maxScore: formData.maxScore,
-      })
+      }
+      
+      if (formData.dueDate) {
+        updateData.dueDate = new Date(formData.dueDate)
+      }
+
+      const result = await updateAssignment(assignmentId, updateData)
       if (result.success) {
         router.push("/assignments")
       } else {

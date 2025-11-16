@@ -76,6 +76,17 @@ export async function createAssignment(data: CreateAssignmentData) {
       return { success: false, error: "Chỉ giáo viên mới có thể tạo bài tập" }
     }
 
+    // Verify teacher owns the class
+    const [classData] = await db
+      .select({ teacherId: classes.teacherId })
+      .from(classes)
+      .where(eq(classes.id, data.classId))
+      .limit(1)
+    
+    if (!classData || classData.teacherId !== user.id) {
+      return { success: false, error: "Bạn không có quyền tạo bài tập cho lớp này" }
+    }
+
     const [newAssignment] = await db
       .insert(assignments)
       .values({
@@ -152,8 +163,26 @@ export async function gradeSubmission(submissionId: number, score: number, feedb
   try {
     const user = await requireAuth()
 
-    if (user.role !== 'teacher') {
+    if (user.role !== 'teacher' && user.role !== 'admin') {
       return { success: false, error: "Chỉ giáo viên mới có thể chấm điểm" }
+    }
+
+    // Verify teacher owns the class (skip for admin)
+    if (user.role === 'teacher') {
+      const [submission] = await db
+        .select({
+          assignmentId: assignmentSubmissions.assignmentId,
+          teacherId: classes.teacherId,
+        })
+        .from(assignmentSubmissions)
+        .innerJoin(assignments, eq(assignmentSubmissions.assignmentId, assignments.id))
+        .innerJoin(classes, eq(assignments.classId, classes.id))
+        .where(eq(assignmentSubmissions.id, submissionId))
+        .limit(1)
+      
+      if (!submission || submission.teacherId !== user.id) {
+        return { success: false, error: "Bạn không có quyền chấm bài nộp này" }
+      }
     }
 
     await db
@@ -313,13 +342,13 @@ export async function deleteSubmission(submissionId: number) {
       return { success: false, error: "Không tìm thấy bài nộp" }
     }
 
-    // Students can only delete their own submissions, teachers can delete any
+    // Students can only delete their own submissions
     if (user.role === 'student' && submission.studentId !== user.id) {
       return { success: false, error: "Bạn không có quyền xóa bài nộp này" }
     }
 
+    // Teachers can only delete submissions from their classes
     if (user.role === 'teacher') {
-      // Verify teacher owns the class
       const [assignment] = await db
         .select({
           teacherId: classes.teacherId,
@@ -329,10 +358,12 @@ export async function deleteSubmission(submissionId: number) {
         .where(eq(assignments.id, submission.assignmentId))
         .limit(1)
 
-      if (assignment && assignment.teacherId !== user.id) {
+      if (!assignment || assignment.teacherId !== user.id) {
         return { success: false, error: "Bạn không có quyền xóa bài nộp này" }
       }
     }
+
+    // Admins can delete any submission (no check needed)
 
     await db.delete(assignmentSubmissions).where(eq(assignmentSubmissions.id, submissionId))
 

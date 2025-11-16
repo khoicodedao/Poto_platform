@@ -154,7 +154,23 @@ export async function getMyClasses() {
   try {
     const user = await requireAuth()
 
-    if (user.role === 'teacher') {
+    if (user.role === 'admin') {
+      // Admin can see all classes
+      return await db
+        .select({
+          id: classes.id,
+          name: classes.name,
+          description: classes.description,
+          schedule: classes.schedule,
+          roomId: classes.roomId,
+          teacherName: users.name,
+          teacherAvatar: users.avatar,
+          createdAt: classes.createdAt,
+        })
+        .from(classes)
+        .leftJoin(users, eq(classes.teacherId, users.id))
+        .orderBy(desc(classes.createdAt))
+    } else if (user.role === 'teacher') {
       // Get classes taught by this teacher
       return await db
         .select({
@@ -245,13 +261,19 @@ export async function deleteClass(classId: number) {
       return { success: false, error: "Không tìm thấy lớp học" }
     }
 
-    if (existingClass.teacherId !== user.id && user.role !== 'admin') {
+    if (user.role === 'teacher' && existingClass.teacherId !== user.id) {
       return { success: false, error: "Bạn không có quyền xóa lớp học này" }
+    }
+
+    if (user.role !== 'teacher' && user.role !== 'admin') {
+      return { success: false, error: "Bạn không có quyền xóa lớp học" }
     }
 
     await db.delete(classes).where(eq(classes.id, classId))
 
     revalidatePath("/classes")
+    revalidatePath(`/classes/${classId}`)
+    revalidatePath(`/classroom/${classId}`)
     return { success: true }
   } catch (error) {
     console.error("Error deleting class:", error)
