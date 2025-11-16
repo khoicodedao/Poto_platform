@@ -219,7 +219,7 @@ export async function updateAssignment(assignmentId: number, data: Partial<Creat
   try {
     const user = await requireAuth()
 
-    if (user.role !== 'teacher') {
+    if (user.role !== 'teacher' && user.role !== 'admin') {
       return { success: false, error: "Chỉ giáo viên mới có thể chỉnh sửa bài tập" }
     }
 
@@ -239,7 +239,7 @@ export async function updateAssignment(assignmentId: number, data: Partial<Creat
       return { success: false, error: "Không tìm thấy bài tập" }
     }
 
-    if (assignment.teacherId !== user.id && user.role !== 'admin') {
+    if (user.role === 'teacher' && assignment.teacherId !== user.id) {
       return { success: false, error: "Bạn không có quyền chỉnh sửa bài tập này" }
     }
 
@@ -264,7 +264,7 @@ export async function deleteAssignment(assignmentId: number) {
   try {
     const user = await requireAuth()
 
-    if (user.role !== 'teacher') {
+    if (user.role !== 'teacher' && user.role !== 'admin') {
       return { success: false, error: "Chỉ giáo viên mới có thể xóa bài tập" }
     }
 
@@ -284,7 +284,7 @@ export async function deleteAssignment(assignmentId: number) {
       return { success: false, error: "Không tìm thấy bài tập" }
     }
 
-    if (assignment.teacherId !== user.id && user.role !== 'admin') {
+    if (user.role === 'teacher' && assignment.teacherId !== user.id) {
       return { success: false, error: "Bạn không có quyền xóa bài tập này" }
     }
 
@@ -329,7 +329,7 @@ export async function deleteSubmission(submissionId: number) {
         .where(eq(assignments.id, submission.assignmentId))
         .limit(1)
 
-      if (assignment && assignment.teacherId !== user.id && user.role !== 'admin') {
+      if (assignment && assignment.teacherId !== user.id) {
         return { success: false, error: "Bạn không có quyền xóa bài nộp này" }
       }
     }
@@ -348,22 +348,24 @@ export async function getAllSubmissions(assignmentId: number) {
   try {
     const user = await requireAuth()
 
-    if (user.role !== 'teacher') {
+    if (user.role !== 'teacher' && user.role !== 'admin') {
       return []
     }
 
-    // Verify teacher owns the class
-    const [assignment] = await db
-      .select({
-        teacherId: classes.teacherId,
-      })
-      .from(assignments)
-      .leftJoin(classes, eq(assignments.classId, classes.id))
-      .where(eq(assignments.id, assignmentId))
-      .limit(1)
+    // Verify teacher owns the class (skip for admin)
+    if (user.role === 'teacher') {
+      const [assignment] = await db
+        .select({
+          teacherId: classes.teacherId,
+        })
+        .from(assignments)
+        .leftJoin(classes, eq(assignments.classId, classes.id))
+        .where(eq(assignments.id, assignmentId))
+        .limit(1)
 
-    if (!assignment || (assignment.teacherId !== user.id && user.role !== 'admin')) {
-      return []
+      if (!assignment || assignment.teacherId !== user.id) {
+        return []
+      }
     }
 
     const submissions = await db
