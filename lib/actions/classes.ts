@@ -192,3 +192,93 @@ export async function getMyClasses() {
     return []
   }
 }
+
+export async function updateClass(classId: number, data: Partial<CreateClassData>) {
+  try {
+    const user = await requireAuth()
+    
+    // Check if user is the teacher of this class
+    const [existingClass] = await db
+      .select()
+      .from(classes)
+      .where(eq(classes.id, classId))
+      .limit(1)
+
+    if (!existingClass) {
+      return { success: false, error: "Không tìm thấy lớp học" }
+    }
+
+    if (existingClass.teacherId !== user.id && user.role !== 'admin') {
+      return { success: false, error: "Bạn không có quyền chỉnh sửa lớp học này" }
+    }
+
+    await db
+      .update(classes)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(classes.id, classId))
+
+    revalidatePath("/classes")
+    revalidatePath(`/classes/${classId}`)
+    revalidatePath(`/classroom/${classId}`)
+    return { success: true }
+  } catch (error) {
+    console.error("Error updating class:", error)
+    return { success: false, error: "Không thể cập nhật lớp học" }
+  }
+}
+
+export async function deleteClass(classId: number) {
+  try {
+    const user = await requireAuth()
+    
+    // Check if user is the teacher of this class
+    const [existingClass] = await db
+      .select()
+      .from(classes)
+      .where(eq(classes.id, classId))
+      .limit(1)
+
+    if (!existingClass) {
+      return { success: false, error: "Không tìm thấy lớp học" }
+    }
+
+    if (existingClass.teacherId !== user.id && user.role !== 'admin') {
+      return { success: false, error: "Bạn không có quyền xóa lớp học này" }
+    }
+
+    await db.delete(classes).where(eq(classes.id, classId))
+
+    revalidatePath("/classes")
+    return { success: true }
+  } catch (error) {
+    console.error("Error deleting class:", error)
+    return { success: false, error: "Không thể xóa lớp học" }
+  }
+}
+
+export async function unenrollFromClass(classId: number) {
+  try {
+    const user = await requireAuth()
+    
+    if (user.role !== 'student') {
+      return { success: false, error: "Chỉ học viên mới có thể hủy đăng ký lớp học" }
+    }
+
+    const result = await db
+      .delete(classEnrollments)
+      .where(and(
+        eq(classEnrollments.classId, classId),
+        eq(classEnrollments.studentId, user.id)
+      ))
+
+    revalidatePath("/classes")
+    revalidatePath(`/classroom/${classId}`)
+    return { success: true }
+  } catch (error) {
+    console.error("Error unenrolling from class:", error)
+    return { success: false, error: "Không thể hủy đăng ký lớp học" }
+  }
+}

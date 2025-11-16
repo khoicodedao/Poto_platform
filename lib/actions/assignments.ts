@@ -214,3 +214,180 @@ export async function getMySubmissions(assignmentId?: number) {
     return []
   }
 }
+
+export async function updateAssignment(assignmentId: number, data: Partial<CreateAssignmentData>) {
+  try {
+    const user = await requireAuth()
+
+    if (user.role !== 'teacher') {
+      return { success: false, error: "Chỉ giáo viên mới có thể chỉnh sửa bài tập" }
+    }
+
+    // Verify the assignment exists and belongs to teacher's class
+    const [assignment] = await db
+      .select({
+        id: assignments.id,
+        classId: assignments.classId,
+        teacherId: classes.teacherId,
+      })
+      .from(assignments)
+      .leftJoin(classes, eq(assignments.classId, classes.id))
+      .where(eq(assignments.id, assignmentId))
+      .limit(1)
+
+    if (!assignment) {
+      return { success: false, error: "Không tìm thấy bài tập" }
+    }
+
+    if (assignment.teacherId !== user.id && user.role !== 'admin') {
+      return { success: false, error: "Bạn không có quyền chỉnh sửa bài tập này" }
+    }
+
+    await db
+      .update(assignments)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(assignments.id, assignmentId))
+
+    revalidatePath("/assignments")
+    revalidatePath(`/assignments/${assignmentId}`)
+    return { success: true }
+  } catch (error) {
+    console.error("Error updating assignment:", error)
+    return { success: false, error: "Không thể cập nhật bài tập" }
+  }
+}
+
+export async function deleteAssignment(assignmentId: number) {
+  try {
+    const user = await requireAuth()
+
+    if (user.role !== 'teacher') {
+      return { success: false, error: "Chỉ giáo viên mới có thể xóa bài tập" }
+    }
+
+    // Verify the assignment exists and belongs to teacher's class
+    const [assignment] = await db
+      .select({
+        id: assignments.id,
+        classId: assignments.classId,
+        teacherId: classes.teacherId,
+      })
+      .from(assignments)
+      .leftJoin(classes, eq(assignments.classId, classes.id))
+      .where(eq(assignments.id, assignmentId))
+      .limit(1)
+
+    if (!assignment) {
+      return { success: false, error: "Không tìm thấy bài tập" }
+    }
+
+    if (assignment.teacherId !== user.id && user.role !== 'admin') {
+      return { success: false, error: "Bạn không có quyền xóa bài tập này" }
+    }
+
+    await db.delete(assignments).where(eq(assignments.id, assignmentId))
+
+    revalidatePath("/assignments")
+    return { success: true }
+  } catch (error) {
+    console.error("Error deleting assignment:", error)
+    return { success: false, error: "Không thể xóa bài tập" }
+  }
+}
+
+export async function deleteSubmission(submissionId: number) {
+  try {
+    const user = await requireAuth()
+
+    // Get submission details
+    const [submission] = await db
+      .select()
+      .from(assignmentSubmissions)
+      .where(eq(assignmentSubmissions.id, submissionId))
+      .limit(1)
+
+    if (!submission) {
+      return { success: false, error: "Không tìm thấy bài nộp" }
+    }
+
+    // Students can only delete their own submissions, teachers can delete any
+    if (user.role === 'student' && submission.studentId !== user.id) {
+      return { success: false, error: "Bạn không có quyền xóa bài nộp này" }
+    }
+
+    if (user.role === 'teacher') {
+      // Verify teacher owns the class
+      const [assignment] = await db
+        .select({
+          teacherId: classes.teacherId,
+        })
+        .from(assignments)
+        .leftJoin(classes, eq(assignments.classId, classes.id))
+        .where(eq(assignments.id, submission.assignmentId))
+        .limit(1)
+
+      if (assignment && assignment.teacherId !== user.id && user.role !== 'admin') {
+        return { success: false, error: "Bạn không có quyền xóa bài nộp này" }
+      }
+    }
+
+    await db.delete(assignmentSubmissions).where(eq(assignmentSubmissions.id, submissionId))
+
+    revalidatePath("/assignments")
+    return { success: true }
+  } catch (error) {
+    console.error("Error deleting submission:", error)
+    return { success: false, error: "Không thể xóa bài nộp" }
+  }
+}
+
+export async function getAllSubmissions(assignmentId: number) {
+  try {
+    const user = await requireAuth()
+
+    if (user.role !== 'teacher') {
+      return []
+    }
+
+    // Verify teacher owns the class
+    const [assignment] = await db
+      .select({
+        teacherId: classes.teacherId,
+      })
+      .from(assignments)
+      .leftJoin(classes, eq(assignments.classId, classes.id))
+      .where(eq(assignments.id, assignmentId))
+      .limit(1)
+
+    if (!assignment || (assignment.teacherId !== user.id && user.role !== 'admin')) {
+      return []
+    }
+
+    const submissions = await db
+      .select({
+        id: assignmentSubmissions.id,
+        studentId: assignmentSubmissions.studentId,
+        studentName: users.name,
+        studentEmail: users.email,
+        content: assignmentSubmissions.content,
+        fileUrl: assignmentSubmissions.fileUrl,
+        status: assignmentSubmissions.status,
+        score: assignmentSubmissions.score,
+        feedback: assignmentSubmissions.feedback,
+        submittedAt: assignmentSubmissions.submittedAt,
+        gradedAt: assignmentSubmissions.gradedAt,
+      })
+      .from(assignmentSubmissions)
+      .innerJoin(users, eq(assignmentSubmissions.studentId, users.id))
+      .where(eq(assignmentSubmissions.assignmentId, assignmentId))
+      .orderBy(desc(assignmentSubmissions.submittedAt))
+
+    return submissions
+  } catch (error) {
+    console.error("Error fetching all submissions:", error)
+    return []
+  }
+}
