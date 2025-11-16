@@ -1,8 +1,11 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { mockUsers, simulateApiDelay } from "@/lib/mock-data"
 import { cookies } from "next/headers"
+import { db, users } from "@/db"
+import { eq } from "drizzle-orm"
+import bcrypt from "bcryptjs"
+import { createSession, deleteSession } from "@/lib/auth"
 
 export async function signInAction(formData: FormData) {
   const email = formData.get("email") as string
@@ -14,28 +17,26 @@ export async function signInAction(formData: FormData) {
     return { success: false, error: "Vui lòng điền đầy đủ thông tin" }
   }
 
-  // Simulate API delay
-  await simulateApiDelay(800)
-
   try {
-    // Find user by email
-    const user = mockUsers.find((u) => u.email === email)
+    // Find user by email in database
+    const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1)
 
     if (!user) {
       return { success: false, error: "Email hoặc mật khẩu không đúng" }
     }
 
-    // For demo purposes, accept password "123456" for all users
-    if (password !== "123456") {
+    // Verify password
+    const isValidPassword = await bcrypt.compare(password, user.password)
+    if (!isValidPassword) {
       return { success: false, error: "Email hoặc mật khẩu không đúng" }
     }
 
-    // Generate mock session token
-    const sessionToken = `session_${user.id}_${Date.now()}`
+    // Create secure session in database
+    const sessionId = await createSession(user.id)
 
     // Set session cookie
     const cookieStore = cookies()
-    cookieStore.set("session", sessionToken, {
+    cookieStore.set("session", sessionId, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -71,36 +72,31 @@ export async function signUpAction(formData: FormData) {
     return { success: false, error: "Mật khẩu phải có ít nhất 6 ký tự" }
   }
 
-  // Simulate API delay
-  await simulateApiDelay(1000)
-
   try {
     // Check if email already exists
-    const existingUser = mockUsers.find((u) => u.email === email)
+    const [existingUser] = await db.select().from(users).where(eq(users.email, email)).limit(1)
     if (existingUser) {
       return { success: false, error: "Email đã được sử dụng" }
     }
 
-    // Create new user (in real app, this would be saved to database)
-    const newUser = {
-      id: Math.max(...mockUsers.map((u) => u.id)) + 1,
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10)
+
+    // Create new user in database
+    const [newUser] = await db.insert(users).values({
       email,
       name,
+      password: hashedPassword,
       role: role as "student" | "teacher",
       avatar: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }
+    }).returning()
 
-    // Add to mock data (in memory only)
-    mockUsers.push(newUser)
-
-    // Generate mock session token
-    const sessionToken = `session_${newUser.id}_${Date.now()}`
+    // Create secure session in database
+    const sessionId = await createSession(newUser.id)
 
     // Set session cookie
     const cookieStore = cookies()
-    cookieStore.set("session", sessionToken, {
+    cookieStore.set("session", sessionId, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -120,6 +116,14 @@ export async function signUpAction(formData: FormData) {
 export async function signOutAction() {
   try {
     const cookieStore = cookies()
+    const sessionId = cookieStore.get("session")?.value
+    
+    // Delete session from database if it exists
+    if (sessionId) {
+      await deleteSession(sessionId)
+    }
+    
+    // Delete session cookie
     cookieStore.delete("session")
     revalidatePath("/")
     return { success: true }

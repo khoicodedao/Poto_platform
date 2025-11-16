@@ -1,9 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { mockUsers, simulateApiDelay } from "@/lib/mock-data"
+import { db, users } from "@/db"
+import { eq } from "drizzle-orm"
+import bcrypt from "bcryptjs"
+import { createSession } from "@/lib/auth"
 
 export async function POST(request: NextRequest) {
-  await simulateApiDelay(1000) // Simulate network delay
-
   try {
     const { email, password, name, role } = await request.json()
 
@@ -16,27 +17,25 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if email already exists
-    const existingUser = mockUsers.find((u) => u.email === email)
+    const [existingUser] = await db.select().from(users).where(eq(users.email, email)).limit(1)
     if (existingUser) {
       return NextResponse.json({ message: "Email đã được sử dụng" }, { status: 409 })
     }
 
-    // Create new user (in real app, this would be saved to database)
-    const newUser = {
-      id: Math.max(...mockUsers.map((u) => u.id)) + 1,
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10)
+
+    // Create new user in database
+    const [newUser] = await db.insert(users).values({
       email,
       name,
+      password: hashedPassword,
       role: role as "student" | "teacher",
       avatar: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }
+    }).returning()
 
-    // Add to mock data (in memory only)
-    mockUsers.push(newUser)
-
-    // Generate mock session token
-    const sessionToken = `session_${newUser.id}_${Date.now()}`
+    // Create secure session in database
+    const sessionId = await createSession(newUser.id)
 
     // Set session cookie
     const response = NextResponse.json({
@@ -47,11 +46,11 @@ export async function POST(request: NextRequest) {
         role: newUser.role,
         avatar: newUser.avatar,
       },
-      token: sessionToken,
+      token: sessionId,
       message: "Đăng ký thành công",
     })
 
-    response.cookies.set("session", sessionToken, {
+    response.cookies.set("session", sessionId, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",

@@ -1,44 +1,194 @@
 "use server"
 
-import { apiClient } from "@/lib/api-client"
 import { revalidatePath } from "next/cache"
-import type { Class } from "@/lib/mock-data"
+import { db, classes, classEnrollments, users } from "@/db"
+import { eq, desc, and } from "drizzle-orm"
+import { requireAuth } from "@/lib/auth"
 
 export interface CreateClassData {
-  title: string
+  name: string
   description: string
-  teacher_id: number
   schedule: string
-  max_students: number
 }
 
-export async function getClasses(): Promise<Class[]> {
-  const result = await apiClient.get<{ classes: Class[]; total: number }>("/classes")
-  return result.success ? result.data.classes : []
+export async function getClasses() {
+  try {
+    const classList = await db
+      .select({
+        id: classes.id,
+        name: classes.name,
+        description: classes.description,
+        schedule: classes.schedule,
+        roomId: classes.roomId,
+        teacherId: classes.teacherId,
+        teacherName: users.name,
+        teacherAvatar: users.avatar,
+        createdAt: classes.createdAt,
+      })
+      .from(classes)
+      .leftJoin(users, eq(classes.teacherId, users.id))
+      .orderBy(desc(classes.createdAt))
+
+    return classList
+  } catch (error) {
+    console.error("Error fetching classes:", error)
+    return []
+  }
 }
 
-export async function getClassById(id: number): Promise<Class | null> {
-  const result = await apiClient.get<{ class: Class }>(`/classes/${id}`)
-  return result.success ? result.data.class : null
+export async function getClassById(id: number) {
+  try {
+    const [classData] = await db
+      .select({
+        id: classes.id,
+        name: classes.name,
+        description: classes.description,
+        schedule: classes.schedule,
+        roomId: classes.roomId,
+        teacherId: classes.teacherId,
+        teacherName: users.name,
+        teacherEmail: users.email,
+        teacherAvatar: users.avatar,
+        createdAt: classes.createdAt,
+      })
+      .from(classes)
+      .leftJoin(users, eq(classes.teacherId, users.id))
+      .where(eq(classes.id, id))
+      .limit(1)
+
+    return classData || null
+  } catch (error) {
+    console.error("Error fetching class:", error)
+    return null
+  }
 }
 
 export async function createClass(data: CreateClassData) {
   try {
-    const result = await apiClient.post<{ class: Class; message: string }>("/classes", data)
-
-    if (result.success) {
-      revalidatePath("/classes")
-      return { success: true, id: result.data.class.id }
+    const user = await requireAuth()
+    
+    if (user.role !== 'teacher') {
+      return { success: false, error: "Chỉ giáo viên mới có thể tạo lớp học" }
     }
 
-    return { success: false, error: result.error || "Failed to create class" }
+    const roomId = `class-${Date.now()}`
+    
+    const [newClass] = await db
+      .insert(classes)
+      .values({
+        name: data.name,
+        description: data.description,
+        schedule: data.schedule,
+        teacherId: user.id,
+        roomId,
+      })
+      .returning()
+
+    revalidatePath("/classes")
+    return { success: true, id: newClass.id }
   } catch (error) {
     console.error("Error creating class:", error)
-    return { success: false, error: "Failed to create class" }
+    return { success: false, error: "Không thể tạo lớp học" }
   }
 }
 
 export async function getClassStudents(classId: number) {
-  // Mock implementation - in real app, this would be a separate API endpoint
-  return []
+  try {
+    const students = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatar: users.avatar,
+        enrolledAt: classEnrollments.enrolledAt,
+      })
+      .from(classEnrollments)
+      .innerJoin(users, eq(classEnrollments.studentId, users.id))
+      .where(eq(classEnrollments.classId, classId))
+      .orderBy(classEnrollments.enrolledAt)
+
+    return students
+  } catch (error) {
+    console.error("Error fetching class students:", error)
+    return []
+  }
+}
+
+export async function enrollInClass(classId: number) {
+  try {
+    const user = await requireAuth()
+    
+    if (user.role !== 'student') {
+      return { success: false, error: "Chỉ học viên mới có thể đăng ký lớp học" }
+    }
+
+    // Check if already enrolled
+    const [existing] = await db
+      .select()
+      .from(classEnrollments)
+      .where(and(
+        eq(classEnrollments.classId, classId),
+        eq(classEnrollments.studentId, user.id)
+      ))
+      .limit(1)
+
+    if (existing) {
+      return { success: false, error: "Bạn đã đăng ký lớp này rồi" }
+    }
+
+    await db.insert(classEnrollments).values({
+      classId,
+      studentId: user.id,
+    })
+
+    revalidatePath(`/classes`)
+    revalidatePath(`/classroom/${classId}`)
+    return { success: true }
+  } catch (error) {
+    console.error("Error enrolling in class:", error)
+    return { success: false, error: "Không thể đăng ký lớp học" }
+  }
+}
+
+export async function getMyClasses() {
+  try {
+    const user = await requireAuth()
+
+    if (user.role === 'teacher') {
+      // Get classes taught by this teacher
+      return await db
+        .select({
+          id: classes.id,
+          name: classes.name,
+          description: classes.description,
+          schedule: classes.schedule,
+          roomId: classes.roomId,
+          createdAt: classes.createdAt,
+        })
+        .from(classes)
+        .where(eq(classes.teacherId, user.id))
+        .orderBy(desc(classes.createdAt))
+    } else {
+      // Get classes enrolled by this student
+      return await db
+        .select({
+          id: classes.id,
+          name: classes.name,
+          description: classes.description,
+          schedule: classes.schedule,
+          roomId: classes.roomId,
+          teacherName: users.name,
+          teacherAvatar: users.avatar,
+          enrolledAt: classEnrollments.enrolledAt,
+        })
+        .from(classEnrollments)
+        .innerJoin(classes, eq(classEnrollments.classId, classes.id))
+        .leftJoin(users, eq(classes.teacherId, users.id))
+        .where(eq(classEnrollments.studentId, user.id))
+        .orderBy(desc(classEnrollments.enrolledAt))
+    }
+  } catch (error) {
+    console.error("Error fetching my classes:", error)
+    return []
+  }
 }

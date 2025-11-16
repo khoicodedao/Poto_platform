@@ -1,9 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { mockUsers, simulateApiDelay } from "@/lib/mock-data"
+import { db, users } from "@/db"
+import { eq } from "drizzle-orm"
+import bcrypt from "bcryptjs"
+import { createSession } from "@/lib/auth"
 
 export async function POST(request: NextRequest) {
-  await simulateApiDelay(800) // Simulate network delay
-
   try {
     const { email, password } = await request.json()
 
@@ -11,20 +12,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Email và mật khẩu là bắt buộc" }, { status: 400 })
     }
 
-    // Find user by email
-    const user = mockUsers.find((u) => u.email === email)
+    // Find user by email in database
+    const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1)
 
     if (!user) {
       return NextResponse.json({ message: "Email hoặc mật khẩu không đúng" }, { status: 401 })
     }
 
-    // For demo purposes, accept password "123456" for all users
-    if (password !== "123456") {
+    // Verify password
+    const isValidPassword = await bcrypt.compare(password, user.password)
+    if (!isValidPassword) {
       return NextResponse.json({ message: "Email hoặc mật khẩu không đúng" }, { status: 401 })
     }
 
-    // Generate mock session token
-    const sessionToken = `session_${user.id}_${Date.now()}`
+    // Create secure session in database
+    const sessionId = await createSession(user.id)
 
     // Set session cookie
     const response = NextResponse.json({
@@ -35,11 +37,11 @@ export async function POST(request: NextRequest) {
         role: user.role,
         avatar: user.avatar,
       },
-      token: sessionToken,
+      token: sessionId,
       message: "Đăng nhập thành công",
     })
 
-    response.cookies.set("session", sessionToken, {
+    response.cookies.set("session", sessionId, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",

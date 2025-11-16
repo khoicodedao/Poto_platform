@@ -2,26 +2,24 @@ import bcrypt from "bcryptjs"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { apiClient } from "@/lib/api-client"
-import type { User } from "@/lib/mock-data"
-import { mockUsers } from "@/lib/mock-data"
+import { db, users, sessions } from "@/db"
+import { eq, and, gt, lt } from "drizzle-orm"
+import crypto from "crypto"
 
-export interface Session {
-  id: string
-  user_id: number
-  expires_at: string
-  created_at: string
-}
-
-export interface AuthUser extends User {
+export interface AuthUser {
+  id: number
+  email: string
+  name: string
+  role: 'student' | 'teacher' | 'admin'
+  avatar: string | null
+  createdAt: Date
+  updatedAt: Date
   session_id?: string
 }
 
-// In-memory sessions storage
-const sessions = new Map<string, Session>()
-
-// Generate session ID
+// Generate secure session ID
 function generateSessionId(): string {
-  return Math.random().toString(36).substring(2) + Date.now().toString(36)
+  return crypto.randomBytes(32).toString('hex')
 }
 
 // Hash password
@@ -39,52 +37,69 @@ export async function createSession(userId: number): Promise<string> {
   const sessionId = generateSessionId()
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
 
-  const session: Session = {
+  await db.insert(sessions).values({
     id: sessionId,
-    user_id: userId,
-    expires_at: expiresAt.toISOString(),
-    created_at: new Date().toISOString(),
-  }
+    userId,
+    expiresAt,
+  })
 
-  sessions.set(sessionId, session)
   return sessionId
 }
 
 // Delete session
 export async function deleteSession(sessionId: string): Promise<void> {
-  sessions.delete(sessionId)
+  await db.delete(sessions).where(eq(sessions.id, sessionId))
+}
+
+// Cleanup expired sessions
+export async function cleanupExpiredSessions(): Promise<void> {
+  const now = new Date()
+  await db.delete(sessions).where(lt(sessions.expiresAt, now))
 }
 
 // Get current session
 export async function getCurrentSession(): Promise<{ user: AuthUser } | null> {
   try {
     const cookieStore = cookies()
-    const sessionToken = cookieStore.get("session")?.value
+    const sessionId = cookieStore.get("session")?.value
 
-    console.log("Session token from cookie:", sessionToken)
+    console.log("Session ID from cookie:", sessionId ? sessionId.substring(0, 10) + "..." : "none")
 
-    if (!sessionToken) {
+    if (!sessionId) {
       return null
     }
 
-    // Extract user ID from session token (format: session_userId_timestamp)
-    const parts = sessionToken.split("_")
-    if (parts.length < 3 || parts[0] !== "session") {
-      console.log("Invalid session token format:", sessionToken)
+    // Get session from database and check if it's expired
+    const [session] = await db
+      .select()
+      .from(sessions)
+      .where(and(
+        eq(sessions.id, sessionId),
+        gt(sessions.expiresAt, new Date())
+      ))
+      .limit(1)
+
+    if (!session) {
+      console.log("Session not found or expired")
+      // Clean up the invalid cookie
+      cookieStore.delete("session")
+      // Clean up any expired sessions in the background
+      cleanupExpiredSessions().catch(err => console.error("Error cleaning up expired sessions:", err))
       return null
     }
 
-    const userId = Number.parseInt(parts[1])
-    if (isNaN(userId)) {
-      console.log("Invalid user ID in session token:", parts[1])
-      return null
-    }
-
-    // Get user from mock data
-    const user = mockUsers.find((u) => u.id === userId)
+    // Get user from database
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, session.userId))
+      .limit(1)
 
     if (!user) {
-      console.log("User not found for ID:", userId)
+      console.log("User not found for session")
+      // Delete the orphaned session
+      await deleteSession(sessionId)
+      cookieStore.delete("session")
       return null
     }
 
@@ -96,8 +111,8 @@ export async function getCurrentSession(): Promise<{ user: AuthUser } | null> {
         name: user.name,
         role: user.role,
         avatar: user.avatar,
-        created_at: user.created_at,
-        updated_at: user.updated_at,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
       },
     }
   } catch (error) {
