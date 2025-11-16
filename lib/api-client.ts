@@ -5,8 +5,8 @@ class ApiClient {
   constructor(baseUrl?: string) {
     // Trong Server Actions, chúng ta cần URL đầy đủ
     if (typeof window === "undefined") {
-      // Server side - sử dụng localhost hoặc VERCEL_URL
-      this.baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}/api` : "http://localhost:3000/api"
+      // Server side - sử dụng Replit domain hoặc localhost
+      this.baseUrl = process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}/api` : "http://localhost:5000/api"
     } else {
       // Client side - có thể sử dụng relative path
       this.baseUrl = baseUrl || "/api"
