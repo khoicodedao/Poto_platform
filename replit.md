@@ -40,6 +40,14 @@ Preferred communication style: Simple, everyday language.
 - Fixed session forgery vulnerability - all authentication paths now use secure session creation
 - Architect-verified: All critical security issues resolved, system is production-ready
 
+**Full CRUD Implementation:**
+- **Classes**: Create (teachers), Read (all roles), Update (teachers own/admins all), Delete (teachers own/admins all), Enroll/Unenroll (students)
+- **Assignments**: Create (teachers), Read (all roles), Update (teachers own/admins all), Delete (teachers own/admins all), Submit (students), Grade (teachers own/admins all)
+- **Submissions**: Create/Resubmit (students), Read (students own/teachers for their classes/admins all), Delete (students own/teachers for their classes/admins all)
+- **UI Pages**: Created edit pages for classes (/classes/[id]/edit) and assignments (/assignments/[id]/edit)
+- **API Routes**: Updated to support PUT/DELETE operations for classes and assignments
+- **Authorization Matrix**: Teachers manage their own resources; Admins can update/delete (but not create) all resources; Students manage their own submissions
+
 **Demo Accounts Created:**
 - Teachers: teacher1@example.com, teacher2@example.com (password: 123456)
 - Students: student1@example.com through student5@example.com (password: 123456)
