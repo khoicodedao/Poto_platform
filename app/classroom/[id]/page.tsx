@@ -1,35 +1,49 @@
 "use client";
 
 import type React from "react";
-
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { Users, MessageCircle, FileText, Send, PenTool } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useWebRTC } from "@/hooks/use-webrtc";
+
 import VideoGrid from "@/components/video-grid";
 import VideoControls from "@/components/video-controls";
+import { useLiveKitClassroom } from "@/hooks/use-livekit-classroom";
+
+// Nếu bạn đã có sẵn các server action này thì dùng lại:
 import { getChatMessages, sendChatMessage } from "@/lib/actions/chat";
 import { getFiles } from "@/lib/actions/files";
 
 export default function ClassroomPage({ params }: { params: { id: string } }) {
   const router = useRouter();
+
   const [isRecording, setIsRecording] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [chatMessage, setChatMessage] = useState("");
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [classFiles, setClassFiles] = useState<any[]>([]);
 
-  const currentUserId = "student-5";
-  const currentUserName = "Minh";
-  const classId = Number.parseInt(params.id);
+  // tạm hard-code, sau này thay bằng auth/session
+  // mỗi tab tạo 1 user khác nhau (identity khác nhau)
+  const [currentUserId] = useState(
+    () => `student-${Math.random().toString(36).slice(2, 8)}`
+  );
 
+  // tên hiển thị có thể giữ nguyên, LiveKit dùng identity để phân biệt
+  const currentUserName = "Minh";
+
+  const classId = Number.parseInt(params.id);
+  const roomName = `class-${classId}`;
+
+  // LiveKit hook
   const {
-    localStream,
+    room,
     localVideoRef,
     participants,
     isAudioEnabled,
@@ -38,25 +52,21 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
     toggleAudio,
     toggleVideo,
     leaveRoom,
-  } = useWebRTC({
-    roomId: params.id,
+  } = useLiveKitClassroom({
+    roomName,
     userId: currentUserId,
     userName: currentUserName,
-    onParticipantJoined: (participant) => {
-      console.log("Participant joined:", participant.name);
-    },
-    onParticipantLeft: (participantId) => {
-      console.log("Participant left:", participantId);
-    },
   });
 
+  // load chat & files
   useEffect(() => {
     const loadData = async () => {
       try {
         const [messages, files] = await Promise.all([
-          getChatMessages(classId),
-          getFiles(classId),
+          getChatMessages?.(classId) ?? Promise.resolve([]),
+          getFiles?.(classId) ?? Promise.resolve([]),
         ]);
+
         setChatMessages(messages);
         setClassFiles(files);
       } catch (error) {
@@ -72,18 +82,18 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
     if (!chatMessage.trim()) return;
 
     try {
-      const result = await sendChatMessage(classId, 5, chatMessage);
-      if (result.success) {
-        const newMessage = {
-          id: result.id,
-          user_name: currentUserName,
-          user_role: "student",
-          message: chatMessage,
-          created_at: new Date().toISOString(),
-        };
-        setChatMessages((prev) => [...prev, newMessage]);
-        setChatMessage("");
-      }
+      const result = await sendChatMessage?.(classId, 5, chatMessage);
+      if (!result || !result.success) return;
+
+      const newMessage = {
+        id: result.id,
+        user_name: currentUserName,
+        user_role: "student",
+        message: chatMessage,
+        created_at: new Date().toISOString(),
+      };
+      setChatMessages((prev) => [...prev, newMessage]);
+      setChatMessage("");
     } catch (error) {
       console.error("Error sending message:", error);
     }
@@ -95,8 +105,8 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
   };
 
   const handleToggleRecording = () => {
-    setIsRecording(!isRecording);
-    console.log(isRecording ? "Stopping recording" : "Starting recording");
+    setIsRecording((prev) => !prev);
+    console.log(!isRecording ? "Starting recording" : "Stopping recording");
   };
 
   const handleToggleFullscreen = () => {
@@ -114,18 +124,16 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
   };
 
   const handleShareScreen = async () => {
+    if (!room) return;
     try {
-      const screenStream = await navigator.mediaDevices.getDisplayMedia({
-        video: true,
-        audio: true,
-      });
-      console.log("Screen sharing started", screenStream);
+      await room.localParticipant.setScreenShareEnabled(true);
     } catch (error) {
-      console.error("Error sharing screen:", error);
+      console.error("Error sharing screen with LiveKit:", error);
     }
   };
 
-  if (0) {
+  // nếu muốn loading khi chưa connect
+  if (!isConnected) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center text-white">
@@ -150,17 +158,17 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
               </Badge>
             </div>
             <div className="text-white text-sm">
-              {participants.length + 1} người tham gia
+              {participants.length} người tham gia
             </div>
           </div>
         </div>
       </header>
 
       <div className="flex h-[calc(100vh-73px)]">
+        {/* LEFT: video */}
         <div className="flex-1 flex flex-col">
           <div className="flex-1">
             <VideoGrid
-              localStream={localStream}
               localVideoRef={localVideoRef}
               participants={participants}
               currentUserId={currentUserId}
@@ -181,10 +189,11 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
             onToggleFullscreen={handleToggleFullscreen}
             onLeaveCall={handleLeaveCall}
             onShareScreen={handleShareScreen}
-            participantCount={participants.length + 1}
+            participantCount={participants.length}
           />
         </div>
 
+        {/* RIGHT: sidebar */}
         <div className="w-80 bg-white border-l border-gray-200 flex flex-col">
           <Tabs defaultValue="chat" className="flex-1 flex flex-col">
             <TabsList className="grid w-full grid-cols-4">
@@ -202,13 +211,14 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
               </TabsTrigger>
             </TabsList>
 
+            {/* Chat */}
             <TabsContent value="chat" className="flex-1 flex flex-col p-4">
               <div className="flex-1 space-y-4 overflow-y-auto mb-4 max-h-96">
                 {chatMessages.map((msg) => (
                   <div key={msg.id} className="flex space-x-2">
                     <Avatar className="w-8 h-8">
                       <AvatarFallback className="text-xs">
-                        {msg.user_name[0]}
+                        {msg.user_name?.[0] ?? "U"}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
@@ -250,47 +260,23 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
               </form>
             </TabsContent>
 
-            <TabsContent value="participants" className="flex-1 p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Avatar className="w-8 h-8">
-                    <AvatarFallback>{currentUserName[0]}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="text-sm font-medium">
-                      {currentUserName} (Bạn)
-                    </p>
-                    <p className="text-xs text-gray-500">Học viên</p>
-                  </div>
-                </div>
-                <div className="flex space-x-1">
-                  <div
-                    className={`w-2 h-2 rounded-full ${
-                      isAudioEnabled ? "bg-green-500" : "bg-red-500"
-                    }`}
-                  />
-                  <div
-                    className={`w-2 h-2 rounded-full ${
-                      isVideoEnabled ? "bg-green-500" : "bg-red-500"
-                    }`}
-                  />
-                </div>
-              </div>
-              {participants.map((participant) => (
-                <div
-                  key={participant.id}
-                  className="flex items-center justify-between"
-                >
+            {/* Participants */}
+            <TabsContent
+              value="participants"
+              className="flex-1 p-4 space-y-3 overflow-y-auto"
+            >
+              {participants.map((p) => (
+                <div key={p.id} className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <Avatar className="w-8 h-8">
-                      <AvatarFallback>{participant.name[0]}</AvatarFallback>
+                      <AvatarFallback>{p.name[0]}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="text-sm font-medium">{participant.name}</p>
+                      <p className="text-sm font-medium">
+                        {p.name} {p.isLocal ? "(Bạn)" : ""}
+                      </p>
                       <p className="text-xs text-gray-500 capitalize">
-                        {participant.id.includes("teacher")
-                          ? "Giáo viên"
-                          : "Học viên"}
+                        {p.id.includes("teacher") ? "Giáo viên" : "Học viên"}
                       </p>
                     </div>
                   </div>
@@ -302,6 +288,7 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
               ))}
             </TabsContent>
 
+            {/* Files */}
             <TabsContent
               value="files"
               className="flex-1 p-4 overflow-y-auto space-y-3"
@@ -324,6 +311,7 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
               )}
             </TabsContent>
 
+            {/* Whiteboard */}
             <TabsContent
               value="whiteboard"
               className="flex-1 p-4 text-center text-gray-500 text-sm"

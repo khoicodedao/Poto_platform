@@ -86,6 +86,11 @@ export function useWebRTC({
       throw error;
     }
   }, []);
+  useEffect(() => {
+    if (localVideoRef.current && localStream) {
+      localVideoRef.current.srcObject = localStream;
+    }
+  }, [localStream]);
 
   // Create peer connection
   const createPeerConnection = useCallback(
@@ -179,7 +184,6 @@ export function useWebRTC({
 
     const socket = io(serverUrl, {
       transports: ["websocket", "polling"],
-      timeout: 20000,
     });
 
     socketRef.current = socket;
@@ -385,6 +389,8 @@ export function useWebRTC({
   // Toggle video
   const toggleVideo = useCallback(() => {
     if (localStream) {
+      console.log("Local stream tracks:", localStream?.getTracks());
+
       const videoTrack = localStream.getVideoTracks()[0];
       if (videoTrack) {
         videoTrack.enabled = !videoTrack.enabled;
