@@ -19,6 +19,7 @@ type VideoControlsProps = {
   isVideoEnabled: boolean;
   isRecording: boolean;
   isFullscreen: boolean;
+  isScreenSharing: boolean; // 🆕 thêm prop
   onToggleAudio: () => void;
   onToggleVideo: () => void;
   onToggleRecording: () => void;
@@ -33,6 +34,7 @@ const VideoControls: React.FC<VideoControlsProps> = ({
   isVideoEnabled,
   isRecording,
   isFullscreen,
+  isScreenSharing, // 🆕 nhận prop
   onToggleAudio,
   onToggleVideo,
   onToggleRecording,
@@ -51,6 +53,7 @@ const VideoControls: React.FC<VideoControlsProps> = ({
       </div>
 
       <div className="flex items-center space-x-3">
+        {/* Mic */}
         <Button
           size="icon"
           variant={isAudioEnabled ? "secondary" : "destructive"}
@@ -63,6 +66,7 @@ const VideoControls: React.FC<VideoControlsProps> = ({
           )}
         </Button>
 
+        {/* Camera */}
         <Button
           size="icon"
           variant={isVideoEnabled ? "secondary" : "destructive"}
@@ -75,6 +79,7 @@ const VideoControls: React.FC<VideoControlsProps> = ({
           )}
         </Button>
 
+        {/* Recording */}
         <Button
           size="icon"
           variant={isRecording ? "destructive" : "secondary"}
@@ -83,10 +88,16 @@ const VideoControls: React.FC<VideoControlsProps> = ({
           <Circle className="h-4 w-4" />
         </Button>
 
-        <Button size="icon" variant="secondary" onClick={onShareScreen}>
+        {/* Screen share */}
+        <Button
+          size="icon"
+          variant={isScreenSharing ? "destructive" : "secondary"}
+          onClick={onShareScreen}
+        >
           <MonitorUp className="h-4 w-4" />
         </Button>
 
+        {/* Fullscreen */}
         <Button size="icon" variant="secondary" onClick={onToggleFullscreen}>
           {isFullscreen ? (
             <Minimize2 className="h-4 w-4" />
@@ -95,6 +106,7 @@ const VideoControls: React.FC<VideoControlsProps> = ({
           )}
         </Button>
 
+        {/* Leave call */}
         <Button size="icon" variant="destructive" onClick={onLeaveCall}>
           <PhoneOff className="h-4 w-4" />
         </Button>

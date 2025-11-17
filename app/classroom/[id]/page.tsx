@@ -3,13 +3,13 @@
 import type React from "react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-
+import { useSession } from "@/hooks/useSession";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
+// import { getCurrentSession } from "@/lib/auth";
 import { Users, MessageCircle, FileText, Send, PenTool } from "lucide-react";
 
 import VideoGrid from "@/components/video-grid";
@@ -22,7 +22,7 @@ import { getFiles } from "@/lib/actions/files";
 
 export default function ClassroomPage({ params }: { params: { id: string } }) {
   const router = useRouter();
-
+  const { user } = useSession();
   const [isRecording, setIsRecording] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [chatMessage, setChatMessage] = useState("");
@@ -36,7 +36,7 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
   );
 
   // tên hiển thị có thể giữ nguyên, LiveKit dùng identity để phân biệt
-  const currentUserName = "Minh";
+  const currentUserName = user?.name || "No name";
 
   const classId = Number.parseInt(params.id);
   const roomName = `class-${classId}`;
@@ -49,8 +49,10 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
     isAudioEnabled,
     isVideoEnabled,
     isConnected,
+    isScreenSharing, // 🆕 lấy từ hook
     toggleAudio,
     toggleVideo,
+    toggleScreenShare, // 🆕 từ hook
     leaveRoom,
   } = useLiveKitClassroom({
     roomName,
@@ -124,12 +126,7 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
   };
 
   const handleShareScreen = async () => {
-    if (!room) return;
-    try {
-      await room.localParticipant.setScreenShareEnabled(true);
-    } catch (error) {
-      console.error("Error sharing screen with LiveKit:", error);
-    }
+    await toggleScreenShare();
   };
 
   // nếu muốn loading khi chưa connect
@@ -179,6 +176,7 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
           </div>
 
           <VideoControls
+            isScreenSharing={isScreenSharing}
             isAudioEnabled={isAudioEnabled}
             isVideoEnabled={isVideoEnabled}
             isRecording={isRecording}

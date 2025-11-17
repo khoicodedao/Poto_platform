@@ -9,6 +9,7 @@ import {
   ParticipantEvent,
   Track,
   TrackPublication,
+  LocalTrackPublication,
 } from "livekit-client";
 
 export type ClassroomParticipant = {
@@ -34,6 +35,7 @@ export function useLiveKitClassroom({
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
 
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const roomRef = useRef<Room | null>(null);
@@ -44,7 +46,6 @@ export function useLiveKitClassroom({
       if (!r || !localVideoRef.current) return;
 
       try {
-        // v2: dùng getTrackPublications() rồi lọc theo source/kind
         const pubs: TrackPublication[] =
           r.localParticipant.getTrackPublications();
 
@@ -53,7 +54,6 @@ export function useLiveKitClassroom({
         );
 
         if (videoPub?.track) {
-          // detach cũ rồi attach lại để tránh leak
           videoPub.track.detach(localVideoRef.current);
           videoPub.track.attach(localVideoRef.current);
         }
@@ -76,7 +76,7 @@ export function useLiveKitClassroom({
         participant: r.localParticipant,
       });
 
-      // remoteParticipants: Map<string, RemoteParticipant>
+      // remote
       Array.from(r.remoteParticipants.values()).forEach((p) => {
         list.push({
           id: p.identity,
@@ -93,7 +93,6 @@ export function useLiveKitClassroom({
 
     const join = async () => {
       try {
-        // 1. gọi API lấy token + url
         const res = await fetch("/api/livekit-token", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -111,7 +110,6 @@ export function useLiveKitClassroom({
 
         const { token, url } = await res.json();
 
-        // 2. tạo Room và connect (v2)
         lkRoom = new Room({
           adaptiveStream: true,
           dynacast: true,
@@ -123,25 +121,54 @@ export function useLiveKitClassroom({
         setRoom(lkRoom);
         setIsConnected(true);
 
-        // 3. bật mic + cam
         await lkRoom.localParticipant.setMicrophoneEnabled(true);
         await lkRoom.localParticipant.setCameraEnabled(true);
 
-        // 4. attach local video lần đầu
         attachLocalVideo();
-
-        // khi local publish/replace track → re-attach
-        lkRoom.localParticipant.on(ParticipantEvent.TrackPublished, () => {
-          attachLocalVideo();
-        });
-
-        lkRoom.localParticipant.on(ParticipantEvent.TrackUnpublished, () => {
-          attachLocalVideo();
-        });
-
-        // 5. quản lý participants
         updateParticipants();
 
+        // 🔁 Khi local publish/unpublish track
+        lkRoom.localParticipant.on(
+          ParticipantEvent.TrackPublished,
+          (pub: LocalTrackPublication) => {
+            // camera thay đổi → gắn lại local
+            if (pub.source === Track.Source.Camera) {
+              attachLocalVideo();
+            }
+
+            // bắt đầu share màn hình
+            if (pub.source === Track.Source.ScreenShare) {
+              setIsScreenSharing(true);
+
+              const track = pub.track;
+              if (track && track.mediaStreamTrack) {
+                track.mediaStreamTrack.onended = () => {
+                  setIsScreenSharing(false);
+                };
+              }
+            }
+
+            // cập nhật lại participants để UI re-render
+            updateParticipants();
+          }
+        );
+
+        lkRoom.localParticipant.on(
+          ParticipantEvent.TrackUnpublished,
+          (pub: LocalTrackPublication) => {
+            if (pub.source === Track.Source.Camera) {
+              attachLocalVideo();
+            }
+
+            if (pub.source === Track.Source.ScreenShare) {
+              setIsScreenSharing(false);
+            }
+
+            updateParticipants();
+          }
+        );
+
+        // 🧑‍🤝‍🧑 join/leave
         lkRoom.on(RoomEvent.ParticipantConnected, () => {
           updateParticipants();
         });
@@ -150,7 +177,15 @@ export function useLiveKitClassroom({
           updateParticipants();
         });
 
-        // nếu remote publish track video → bên VideoGrid sẽ tự attach
+        // 🆕 remote publish/unpublish track (camera/screen) → cũng re-render
+
+        lkRoom.on(RoomEvent.TrackSubscribed, () => {
+          updateParticipants();
+        });
+
+        lkRoom.on(RoomEvent.TrackUnsubscribed, () => {
+          updateParticipants();
+        });
       } catch (err) {
         console.error("Error connecting LiveKit:", err);
       }
@@ -165,6 +200,7 @@ export function useLiveKitClassroom({
       roomRef.current = null;
       setIsConnected(false);
       setParticipants([]);
+      setIsScreenSharing(false);
     };
   }, [roomName, userId, userName]);
 
@@ -182,6 +218,19 @@ export function useLiveKitClassroom({
     setIsVideoEnabled(enabled);
   };
 
+  const toggleScreenShare = async () => {
+    if (!roomRef.current) return;
+
+    const target = !isScreenSharing;
+
+    try {
+      await roomRef.current.localParticipant.setScreenShareEnabled(target);
+      setIsScreenSharing(target);
+    } catch (error) {
+      console.error("Error toggling screen share:", error);
+    }
+  };
+
   const leaveRoom = () => {
     if (roomRef.current) {
       roomRef.current.disconnect();
@@ -189,6 +238,7 @@ export function useLiveKitClassroom({
     }
     setIsConnected(false);
     setParticipants([]);
+    setIsScreenSharing(false);
   };
 
   return {
@@ -197,8 +247,10 @@ export function useLiveKitClassroom({
     isAudioEnabled,
     isVideoEnabled,
     isConnected,
+    isScreenSharing,
     toggleAudio,
     toggleVideo,
+    toggleScreenShare,
     leaveRoom,
     localVideoRef,
   };
