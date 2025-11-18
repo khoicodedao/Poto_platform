@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/hooks/useSession";
 import { Button } from "@/components/ui/button";
@@ -9,14 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-// import { getCurrentSession } from "@/lib/auth";
 import { Users, MessageCircle, FileText, Send, PenTool } from "lucide-react";
 
 import VideoGrid from "@/components/video-grid";
 import VideoControls from "@/components/video-controls";
 import { useLiveKitClassroom } from "@/hooks/use-livekit-classroom";
 
-// Nếu bạn đã có sẵn các server action này thì dùng lại:
 import { getChatMessages, sendChatMessage } from "@/lib/actions/chat";
 import { getFiles } from "@/lib/actions/files";
 
@@ -29,19 +27,21 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [classFiles, setClassFiles] = useState<any[]>([]);
 
-  // tạm hard-code, sau này thay bằng auth/session
-  // mỗi tab tạo 1 user khác nhau (identity khác nhau)
+  // 🆕 trạng thái ẩn/hiện sidebar (các tab chat/participants/files/whiteboard)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   const [currentUserId] = useState(
     () => `student-${Math.random().toString(36).slice(2, 8)}`
   );
 
-  // tên hiển thị có thể giữ nguyên, LiveKit dùng identity để phân biệt
   const currentUserName = user?.name || "No name";
 
   const classId = Number.parseInt(params.id);
   const roomName = `class-${classId}`;
-
-  // LiveKit hook
+  // 🆕 ref cho screen recording
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<BlobPart[]>([]);
+  const screenStreamRef = useRef<MediaStream | null>(null);
   const {
     room,
     localVideoRef,
@@ -49,18 +49,104 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
     isAudioEnabled,
     isVideoEnabled,
     isConnected,
-    isScreenSharing, // 🆕 lấy từ hook
+    isScreenSharing,
     toggleAudio,
     toggleVideo,
-    toggleScreenShare, // 🆕 từ hook
+    toggleScreenShare,
     leaveRoom,
   } = useLiveKitClassroom({
     roomName,
     userId: currentUserId,
     userName: currentUserName,
   });
+  const startScreenRecording = async () => {
+    try {
+      // Yêu cầu browser cho phép share màn hình
+      const stream = await (navigator.mediaDevices as any).getDisplayMedia({
+        video: true,
+        audio: true, // nếu muốn thu cả audio từ mic/system (tuỳ browser hỗ trợ)
+      });
 
-  // load chat & files
+      screenStreamRef.current = stream;
+      recordedChunksRef.current = [];
+
+      const options: MediaRecorderOptions = {
+        mimeType: "video/webm;codecs=vp9",
+      };
+
+      const mediaRecorder = new MediaRecorder(stream, options);
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          recordedChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        try {
+          const blob = new Blob(recordedChunksRef.current, {
+            type: "video/webm",
+          });
+
+          // Không có data thì thôi
+          if (blob.size === 0) {
+            console.warn("No recorded data");
+            return;
+          }
+
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `class-${classId}-${Date.now()}.webm`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        } finally {
+          recordedChunksRef.current = [];
+          // dừng stream
+          screenStreamRef.current?.getTracks().forEach((track) => track.stop());
+          screenStreamRef.current = null;
+          setIsRecording(false);
+        }
+      };
+
+      // nếu user tự tắt share từ UI của browser → dừng recorder
+      const [videoTrack] = stream.getVideoTracks();
+      if (videoTrack) {
+        videoTrack.addEventListener("ended", () => {
+          if (mediaRecorder.state !== "inactive") {
+            mediaRecorder.stop();
+          }
+        });
+      }
+
+      mediaRecorder.start();
+      mediaRecorderRef.current = mediaRecorder;
+      setIsRecording(true);
+    } catch (error) {
+      console.error("Error starting screen recording:", error);
+      setIsRecording(false);
+    }
+  };
+  const handleToggleRecording = async () => {
+    if (!isRecording) {
+      await startScreenRecording();
+    } else {
+      stopScreenRecording();
+    }
+  };
+
+  // 🆕 DỪNG GHI MÀN HÌNH (gọi .stop() → onstop sẽ xử lý download)
+  const stopScreenRecording = () => {
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== "inactive") {
+      recorder.stop();
+    } else {
+      setIsRecording(false);
+    }
+  };
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -104,11 +190,6 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
   const handleLeaveCall = () => {
     leaveRoom();
     router.push("/classes");
-  };
-
-  const handleToggleRecording = () => {
-    setIsRecording((prev) => !prev);
-    console.log(!isRecording ? "Starting recording" : "Stopping recording");
   };
 
   const handleToggleFullscreen = () => {
@@ -181,143 +262,148 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
             isVideoEnabled={isVideoEnabled}
             isRecording={isRecording}
             isFullscreen={isFullscreen}
+            participantCount={participants.length}
+            // 🆕 ẩn/hiện sidebar
+            isSidebarOpen={isSidebarOpen}
+            onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
             onToggleAudio={toggleAudio}
             onToggleVideo={toggleVideo}
             onToggleRecording={handleToggleRecording}
             onToggleFullscreen={handleToggleFullscreen}
             onLeaveCall={handleLeaveCall}
             onShareScreen={handleShareScreen}
-            participantCount={participants.length}
           />
         </div>
 
-        {/* RIGHT: sidebar */}
-        <div className="w-80 bg-white border-l border-gray-200 flex flex-col">
-          <Tabs defaultValue="chat" className="flex-1 flex flex-col">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="chat">
-                <MessageCircle className="h-4 w-4" />
-              </TabsTrigger>
-              <TabsTrigger value="participants">
-                <Users className="h-4 w-4" />
-              </TabsTrigger>
-              <TabsTrigger value="files">
-                <FileText className="h-4 w-4" />
-              </TabsTrigger>
-              <TabsTrigger value="whiteboard">
-                <PenTool className="h-4 w-4" />
-              </TabsTrigger>
-            </TabsList>
+        {/* RIGHT: sidebar – chỉ hiển thị khi isSidebarOpen = true */}
+        {isSidebarOpen && (
+          <div className="w-80 bg-white border-l border-gray-200 flex flex-col">
+            <Tabs defaultValue="chat" className="flex-1 flex flex-col">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="chat">
+                  <MessageCircle className="h-4 w-4" />
+                </TabsTrigger>
+                <TabsTrigger value="participants">
+                  <Users className="h-4 w-4" />
+                </TabsTrigger>
+                <TabsTrigger value="files">
+                  <FileText className="h-4 w-4" />
+                </TabsTrigger>
+                <TabsTrigger value="whiteboard">
+                  <PenTool className="h-4 w-4" />
+                </TabsTrigger>
+              </TabsList>
 
-            {/* Chat */}
-            <TabsContent value="chat" className="flex-1 flex flex-col p-4">
-              <div className="flex-1 space-y-4 overflow-y-auto mb-4 max-h-96">
-                {chatMessages.map((msg) => (
-                  <div key={msg.id} className="flex space-x-2">
-                    <Avatar className="w-8 h-8">
-                      <AvatarFallback className="text-xs">
-                        {msg.user_name?.[0] ?? "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium">
-                          {msg.user_name}
-                        </span>
-                        {msg.user_role === "teacher" && (
-                          <Badge variant="secondary" className="text-xs">
-                            Giáo viên
-                          </Badge>
-                        )}
-                        <span className="text-xs text-gray-500">
-                          {new Date(msg.created_at).toLocaleTimeString(
-                            "vi-VN",
-                            {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            }
+              {/* Chat */}
+              <TabsContent value="chat" className="flex-1 flex flex-col p-4">
+                <div className="flex-1 space-y-4 overflow-y-auto mb-4 max-h-96">
+                  {chatMessages.map((msg) => (
+                    <div key={msg.id} className="flex space-x-2">
+                      <Avatar className="w-8 h-8">
+                        <AvatarFallback className="text-xs">
+                          {msg.user_name?.[0] ?? "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm font-medium">
+                            {msg.user_name}
+                          </span>
+                          {msg.user_role === "teacher" && (
+                            <Badge variant="secondary" className="text-xs">
+                              Giáo viên
+                            </Badge>
                           )}
-                        </span>
+                          <span className="text-xs text-gray-500">
+                            {new Date(msg.created_at).toLocaleTimeString(
+                              "vi-VN",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-700 mt-1">
+                          {msg.message}
+                        </p>
                       </div>
-                      <p className="text-sm text-gray-700 mt-1">
-                        {msg.message}
-                      </p>
+                    </div>
+                  ))}
+                </div>
+                <form onSubmit={handleSendMessage} className="flex space-x-2">
+                  <Input
+                    placeholder="Nhập tin nhắn..."
+                    value={chatMessage}
+                    onChange={(e) => setChatMessage(e.target.value)}
+                  />
+                  <Button type="submit" size="sm">
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </form>
+              </TabsContent>
+
+              {/* Participants */}
+              <TabsContent
+                value="participants"
+                className="flex-1 p-4 space-y-3 overflow-y-auto"
+              >
+                {participants.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <Avatar className="w-8 h-8">
+                        <AvatarFallback>{p.name[0]}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-sm font-medium">
+                          {p.name} {p.isLocal ? "(Bạn)" : ""}
+                        </p>
+                        <p className="text-xs text-gray-500 capitalize">
+                          {p.id.includes("teacher") ? "Giáo viên" : "Học viên"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-green-500 rounded-full" />
+                      <div className="w-2 h-2 bg-green-500 rounded-full" />
                     </div>
                   </div>
                 ))}
-              </div>
-              <form onSubmit={handleSendMessage} className="flex space-x-2">
-                <Input
-                  placeholder="Nhập tin nhắn..."
-                  value={chatMessage}
-                  onChange={(e) => setChatMessage(e.target.value)}
-                />
-                <Button type="submit" size="sm">
-                  <Send className="h-4 w-4" />
-                </Button>
-              </form>
-            </TabsContent>
+              </TabsContent>
 
-            {/* Participants */}
-            <TabsContent
-              value="participants"
-              className="flex-1 p-4 space-y-3 overflow-y-auto"
-            >
-              {participants.map((p) => (
-                <div key={p.id} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Avatar className="w-8 h-8">
-                      <AvatarFallback>{p.name[0]}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-medium">
-                        {p.name} {p.isLocal ? "(Bạn)" : ""}
-                      </p>
-                      <p className="text-xs text-gray-500 capitalize">
-                        {p.id.includes("teacher") ? "Giáo viên" : "Học viên"}
-                      </p>
+              {/* Files */}
+              <TabsContent
+                value="files"
+                className="flex-1 p-4 overflow-y-auto space-y-3"
+              >
+                {classFiles.length === 0 ? (
+                  <p className="text-sm text-gray-500">Chưa có tài liệu nào.</p>
+                ) : (
+                  classFiles.map((file) => (
+                    <div key={file.id} className="text-sm border rounded p-2">
+                      <a
+                        href={file.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 underline"
+                      >
+                        {file.name}
+                      </a>
                     </div>
-                  </div>
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-green-500 rounded-full" />
-                    <div className="w-2 h-2 bg-green-500 rounded-full" />
-                  </div>
-                </div>
-              ))}
-            </TabsContent>
+                  ))
+                )}
+              </TabsContent>
 
-            {/* Files */}
-            <TabsContent
-              value="files"
-              className="flex-1 p-4 overflow-y-auto space-y-3"
-            >
-              {classFiles.length === 0 ? (
-                <p className="text-sm text-gray-500">Chưa có tài liệu nào.</p>
-              ) : (
-                classFiles.map((file) => (
-                  <div key={file.id} className="text-sm border rounded p-2">
-                    <a
-                      href={file.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 underline"
-                    >
-                      {file.name}
-                    </a>
-                  </div>
-                ))
-              )}
-            </TabsContent>
-
-            {/* Whiteboard */}
-            <TabsContent
-              value="whiteboard"
-              className="flex-1 p-4 text-center text-gray-500 text-sm"
-            >
-              <p>Tính năng bảng trắng đang được phát triển.</p>
-            </TabsContent>
-          </Tabs>
-        </div>
+              {/* Whiteboard */}
+              <TabsContent
+                value="whiteboard"
+                className="flex-1 p-4 text-center text-gray-500 text-sm"
+              >
+                <p>Tính năng bảng trắng đang được phát triển.</p>
+              </TabsContent>
+            </Tabs>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import * as React from "react";
 import type { RefObject } from "react";
 import { Track } from "livekit-client";
 import type { ClassroomParticipant } from "@/hooks/use-livekit-classroom";
-
+import { VideoOff } from "lucide-react"; // 🆕 thêm
 type VideoGridProps = {
   localVideoRef: RefObject<HTMLVideoElement>; // giờ không dùng nữa, nhưng giữ lại để tránh lỗi type
   participants: ClassroomParticipant[];
@@ -13,13 +13,70 @@ type VideoGridProps = {
   isAudioEnabled: boolean;
   isVideoEnabled: boolean;
 };
-
+type AudioTracksProps = {
+  participants: ClassroomParticipant[];
+};
 export default function VideoGrid({
   localVideoRef,
   participants,
   currentUserId,
   currentUserName,
 }: VideoGridProps) {
+  /* ================== AUDIO TRACKS ================== */
+  function AudioTracks({ participants }: AudioTracksProps) {
+    React.useEffect(() => {
+      const audioElements: HTMLAudioElement[] = [];
+
+      participants.forEach((p) => {
+        const lkParticipant = p.participant;
+        const pubs = lkParticipant.getTrackPublications();
+
+        const micPub: any =
+          pubs.find(
+            (pp) =>
+              pp.source === Track.Source.Microphone &&
+              ((pp as any).isSubscribed === undefined ||
+                (pp as any).isSubscribed) &&
+              ((pp as any).audioTrack || (pp as any).track)
+          ) ?? null;
+
+        const audioTrack = micPub?.audioTrack ?? micPub?.track ?? null;
+
+        if (audioTrack && !p.isLocal) {
+          // thường không cần nghe lại mic của mình
+          const audioEl = new Audio();
+          audioEl.autoplay = true;
+          audioEl.muted = false;
+          audioEl.controls = false;
+          audioTrack.attach(audioEl);
+          audioElements.push(audioEl);
+        }
+      });
+
+      return () => {
+        // 1) cleanup audio element
+        audioElements.forEach((el) => {
+          el.pause();
+          el.srcObject = null;
+          el.remove();
+        });
+
+        // 2) CHỈ detach các track microphone, không đụng tới camera
+        participants.forEach((p) => {
+          const pubs = p.participant.getTrackPublications();
+          pubs.forEach((pp: any) => {
+            if (pp.source === Track.Source.Microphone) {
+              pp.audioTrack?.detach();
+              (pp as any).track?.detach?.(); // audio track thôi
+            }
+          });
+        });
+      };
+    }, [participants]);
+
+    return null;
+  }
+
   // 1. Tìm các track share màn hình (local + remote)
   const screenShareTiles = participants
     .map((p) => {
@@ -109,6 +166,7 @@ export default function VideoGrid({
   return (
     <div className="w-full h-full grid gap-4 p-4 md:grid-cols-2 xl:grid-cols-3 bg-black">
       {/* Local tile */}
+      <AudioTracks participants={participants} />
       {local && (
         <div className="relative bg-gray-900 rounded-lg overflow-hidden">
           <CameraTile
@@ -155,59 +213,65 @@ function CameraTile({
 }: CameraTileProps) {
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
 
+  // Lấy participant của LiveKit
+  const lkParticipant = participant.participant;
+
+  // Lấy danh sách track publications
+  const pubs = lkParticipant.getTrackPublications();
+
+  // Ưu tiên dùng publication truyền vào, nếu không có thì tự tìm track camera
+  let cameraPub: any = publication ?? null;
+
+  if (!cameraPub) {
+    cameraPub =
+      pubs.find(
+        (pp) =>
+          pp.source === Track.Source.Camera &&
+          // remote: isSubscribed; local: có track
+          ((pp as any).isSubscribed === undefined ||
+            (pp as any).isSubscribed) &&
+          ((pp as any).videoTrack || (pp as any).track)
+      ) ?? null;
+  }
+
+  const cameraTrack =
+    (cameraPub as any)?.videoTrack ?? (cameraPub as any)?.track ?? null;
+
+  const hasVideo = !!cameraTrack;
+
   React.useEffect(() => {
-    const p = participant.participant; // LocalParticipant | RemoteParticipant
+    if (!videoRef.current) return;
 
-    const attachVideo = () => {
-      if (!videoRef.current) return;
+    if (!cameraTrack) {
+      // không có track → clear video element
+      videoRef.current.srcObject = null;
+      return;
+    }
 
-      let pub: any = publication ?? null;
+    // có track → attach vào video
+    cameraTrack.attach(videoRef.current);
 
-      if (!pub) {
-        // Tự tìm track camera nếu không có sẵn
-        const pubs = p.getTrackPublications();
-        pub =
-          pubs.find(
-            (pp) =>
-              pp.source === Track.Source.Camera &&
-              ((pp as any).isSubscribed === undefined ||
-                (pp as any).isSubscribed) &&
-              ((pp as any).videoTrack || (pp as any).track)
-          ) ?? null;
-      }
-
-      const track = pub?.videoTrack ?? pub?.track ?? null;
-
-      if (track) {
-        track.detach(videoRef.current);
-        track.attach(videoRef.current);
-      } else {
-        videoRef.current.srcObject = null;
-      }
-    };
-
-    attachVideo();
-
-    // Cleanup detach
     return () => {
-      if (!videoRef.current) return;
-      const pubs = p.getTrackPublications();
-      pubs.forEach((pp) => {
-        (pp as any).track?.detach(videoRef.current!);
-        (pp as any).videoTrack?.detach(videoRef.current!);
-      });
+      cameraTrack.detach(videoRef.current!);
     };
-  }, [participant, publication]);
+  }, [cameraTrack]);
 
   return (
     <>
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted={isLocal} // local mute để tránh echo
-        className="w-full h-full object-cover bg-black"
-      />
+      {hasVideo ? (
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted={isLocal}
+          className="w-full h-full object-cover bg-black"
+        />
+      ) : (
+        // Placeholder khi không có camera
+        <div className="w-full h-full flex items-center justify-center bg-gray-900">
+          <VideoOff className="w-10 h-10 text-gray-500" />
+        </div>
+      )}
 
       <div className="absolute bottom-2 left-2 px-2 py-1 rounded bg-black/60 text-xs text-white">
         {fallbackName}

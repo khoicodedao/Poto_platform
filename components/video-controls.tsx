@@ -11,6 +11,7 @@ import {
   Minimize2,
   MonitorUp,
   Circle,
+  PanelRight, // 🆕 icon ẩn/hiện sidebar
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -19,14 +20,19 @@ type VideoControlsProps = {
   isVideoEnabled: boolean;
   isRecording: boolean;
   isFullscreen: boolean;
-  isScreenSharing: boolean; // 🆕 thêm prop
+  isScreenSharing: boolean;
+  participantCount: number;
+
+  // 🆕 props để điều khiển sidebar
+  isSidebarOpen: boolean;
+  onToggleSidebar: () => void;
+
   onToggleAudio: () => void;
   onToggleVideo: () => void;
   onToggleRecording: () => void;
   onToggleFullscreen: () => void;
   onLeaveCall: () => void;
   onShareScreen: () => void;
-  participantCount: number;
 };
 
 const VideoControls: React.FC<VideoControlsProps> = ({
@@ -34,14 +40,16 @@ const VideoControls: React.FC<VideoControlsProps> = ({
   isVideoEnabled,
   isRecording,
   isFullscreen,
-  isScreenSharing, // 🆕 nhận prop
+  isScreenSharing,
+  participantCount,
+  isSidebarOpen,
+  onToggleSidebar,
   onToggleAudio,
   onToggleVideo,
   onToggleRecording,
   onToggleFullscreen,
   onLeaveCall,
   onShareScreen,
-  participantCount,
 }) => {
   return (
     <div className="bg-gray-800 border-t border-gray-700 px-4 py-3 flex items-center justify-between">
@@ -53,6 +61,16 @@ const VideoControls: React.FC<VideoControlsProps> = ({
       </div>
 
       <div className="flex items-center space-x-3">
+        {/* 🆕 Toggle sidebar (chat/participants/files/whiteboard) */}
+        <Button
+          size="icon"
+          variant={isSidebarOpen ? "destructive" : "secondary"}
+          onClick={onToggleSidebar}
+          aria-pressed={isSidebarOpen}
+        >
+          <PanelRight className="h-4 w-4" />
+        </Button>
+
         {/* Mic */}
         <Button
           size="icon"
