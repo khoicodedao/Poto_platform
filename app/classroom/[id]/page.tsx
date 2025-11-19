@@ -15,19 +15,24 @@ import VideoGrid from "@/components/video-grid";
 import VideoControls from "@/components/video-controls";
 import { useLiveKitClassroom } from "@/hooks/use-livekit-classroom";
 
-import { getChatMessages, sendChatMessage } from "@/lib/actions/chat";
+import {
+  getChatMessages,
+  sendChatMessage,
+  type ChatMessage,
+} from "@/lib/actions/chat";
 import { getFiles } from "@/lib/actions/files";
 
 export default function ClassroomPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const { user } = useSession();
+
   const [isRecording, setIsRecording] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
   const [chatMessage, setChatMessage] = useState("");
-  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [classFiles, setClassFiles] = useState<any[]>([]);
 
-  // 🆕 trạng thái ẩn/hiện sidebar (các tab chat/participants/files/whiteboard)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const [currentUserId] = useState(
@@ -38,10 +43,14 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
 
   const classId = Number.parseInt(params.id);
   const roomName = `class-${classId}`;
-  // 🆕 ref cho screen recording
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<BlobPart[]>([]);
   const screenStreamRef = useRef<MediaStream | null>(null);
+
+  // auto scroll chat xuống cuối
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
+
   const {
     room,
     localVideoRef,
@@ -59,12 +68,12 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
     userId: currentUserId,
     userName: currentUserName,
   });
+
   const startScreenRecording = async () => {
     try {
-      // Yêu cầu browser cho phép share màn hình
       const stream = await (navigator.mediaDevices as any).getDisplayMedia({
         video: true,
-        audio: true, // nếu muốn thu cả audio từ mic/system (tuỳ browser hỗ trợ)
+        audio: true,
       });
 
       screenStreamRef.current = stream;
@@ -88,7 +97,6 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
             type: "video/webm",
           });
 
-          // Không có data thì thôi
           if (blob.size === 0) {
             console.warn("No recorded data");
             return;
@@ -104,14 +112,12 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
           URL.revokeObjectURL(url);
         } finally {
           recordedChunksRef.current = [];
-          // dừng stream
           screenStreamRef.current?.getTracks().forEach((track) => track.stop());
           screenStreamRef.current = null;
           setIsRecording(false);
         }
       };
 
-      // nếu user tự tắt share từ UI của browser → dừng recorder
       const [videoTrack] = stream.getVideoTracks();
       if (videoTrack) {
         videoTrack.addEventListener("ended", () => {
@@ -129,6 +135,7 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
       setIsRecording(false);
     }
   };
+
   const handleToggleRecording = async () => {
     if (!isRecording) {
       await startScreenRecording();
@@ -137,7 +144,6 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
     }
   };
 
-  // 🆕 DỪNG GHI MÀN HÌNH (gọi .stop() → onstop sẽ xử lý download)
   const stopScreenRecording = () => {
     const recorder = mediaRecorderRef.current;
     if (recorder && recorder.state !== "inactive") {
@@ -147,13 +153,18 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
     }
   };
 
+  // Load chat + files (và có thể polling nhẹ)
   useEffect(() => {
+    let isMounted = true;
+
     const loadData = async () => {
       try {
         const [messages, files] = await Promise.all([
           getChatMessages?.(classId) ?? Promise.resolve([]),
           getFiles?.(classId) ?? Promise.resolve([]),
         ]);
+
+        if (!isMounted) return;
 
         setChatMessages(messages);
         setClassFiles(files);
@@ -163,24 +174,33 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
     };
 
     loadData();
+
+    // OPTIONAL: polling mỗi 4s để update chat từ người khác
+    const interval = setInterval(loadData, 4000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [classId]);
+
+  // auto scroll xuống cuối khi có tin mới
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [chatMessages.length]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatMessage.trim()) return;
 
     try {
-      const result = await sendChatMessage?.(classId, 5, chatMessage);
+      const result = await sendChatMessage?.(classId, chatMessage);
       if (!result || !result.success) return;
 
-      const newMessage = {
-        id: result.id,
-        user_name: currentUserName,
-        user_role: "student",
-        message: chatMessage,
-        created_at: new Date().toISOString(),
-      };
-      setChatMessages((prev) => [...prev, newMessage]);
+      // dùng message trả về từ server (đã có user info)
+      setChatMessages((prev) => [...prev, result.message]);
       setChatMessage("");
     } catch (error) {
       console.error("Error sending message:", error);
@@ -210,12 +230,11 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
     await toggleScreenShare();
   };
 
-  // nếu muốn loading khi chưa connect
   if (!isConnected) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center text-white">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4" />
           <p>Đang kết nối vào lớp học...</p>
         </div>
       </div>
@@ -263,7 +282,6 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
             isRecording={isRecording}
             isFullscreen={isFullscreen}
             participantCount={participants.length}
-            // 🆕 ẩn/hiện sidebar
             isSidebarOpen={isSidebarOpen}
             onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
             onToggleAudio={toggleAudio}
@@ -275,7 +293,7 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
           />
         </div>
 
-        {/* RIGHT: sidebar – chỉ hiển thị khi isSidebarOpen = true */}
+        {/* RIGHT: sidebar */}
         {isSidebarOpen && (
           <div className="w-80 bg-white border-l border-gray-200 flex flex-col">
             <Tabs defaultValue="chat" className="flex-1 flex flex-col">
@@ -301,21 +319,21 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
                     <div key={msg.id} className="flex space-x-2">
                       <Avatar className="w-8 h-8">
                         <AvatarFallback className="text-xs">
-                          {msg.user_name?.[0] ?? "U"}
+                          {msg.userName?.[0] ?? "U"}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
                         <div className="flex items-center space-x-2">
                           <span className="text-sm font-medium">
-                            {msg.user_name}
+                            {msg.userName}
                           </span>
-                          {msg.user_role === "teacher" && (
+                          {msg.userRole === "teacher" && (
                             <Badge variant="secondary" className="text-xs">
                               Giáo viên
                             </Badge>
                           )}
                           <span className="text-xs text-gray-500">
-                            {new Date(msg.created_at).toLocaleTimeString(
+                            {new Date(msg.createdAt).toLocaleTimeString(
                               "vi-VN",
                               {
                                 hour: "2-digit",
@@ -330,6 +348,7 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
                       </div>
                     </div>
                   ))}
+                  <div ref={chatEndRef} />
                 </div>
                 <form onSubmit={handleSendMessage} className="flex space-x-2">
                   <Input

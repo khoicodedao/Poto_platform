@@ -2,20 +2,23 @@
 
 import * as React from "react";
 import type { RefObject } from "react";
-import { Track } from "livekit-client";
+import { Track, ParticipantEvent } from "livekit-client";
 import type { ClassroomParticipant } from "@/hooks/use-livekit-classroom";
-import { VideoOff } from "lucide-react"; // 🆕 thêm
+import { VideoOff } from "lucide-react";
+
 type VideoGridProps = {
-  localVideoRef: RefObject<HTMLVideoElement>; // giờ không dùng nữa, nhưng giữ lại để tránh lỗi type
+  localVideoRef: RefObject<HTMLVideoElement>; // không dùng nữa nhưng giữ type
   participants: ClassroomParticipant[];
   currentUserId: string;
   currentUserName: string;
   isAudioEnabled: boolean;
   isVideoEnabled: boolean;
 };
+
 type AudioTracksProps = {
   participants: ClassroomParticipant[];
 };
+
 export default function VideoGrid({
   localVideoRef,
   participants,
@@ -25,7 +28,7 @@ export default function VideoGrid({
   /* ================== AUDIO TRACKS ================== */
   function AudioTracks({ participants }: AudioTracksProps) {
     React.useEffect(() => {
-      const audioElements: HTMLAudioElement[] = [];
+      const attached: { track: any; el: HTMLAudioElement }[] = [];
 
       participants.forEach((p) => {
         const lkParticipant = p.participant;
@@ -42,34 +45,28 @@ export default function VideoGrid({
 
         const audioTrack = micPub?.audioTrack ?? micPub?.track ?? null;
 
+        // chỉ nghe người khác, không nghe lại mic của mình
         if (audioTrack && !p.isLocal) {
-          // thường không cần nghe lại mic của mình
           const audioEl = new Audio();
           audioEl.autoplay = true;
           audioEl.muted = false;
           audioEl.controls = false;
+
           audioTrack.attach(audioEl);
-          audioElements.push(audioEl);
+          attached.push({ track: audioTrack, el: audioEl });
         }
       });
 
       return () => {
-        // 1) cleanup audio element
-        audioElements.forEach((el) => {
+        attached.forEach(({ track, el }) => {
+          try {
+            track.detach(el);
+          } catch (e) {
+            // ignore
+          }
           el.pause();
           el.srcObject = null;
           el.remove();
-        });
-
-        // 2) CHỈ detach các track microphone, không đụng tới camera
-        participants.forEach((p) => {
-          const pubs = p.participant.getTrackPublications();
-          pubs.forEach((pp: any) => {
-            if (pp.source === Track.Source.Microphone) {
-              pp.audioTrack?.detach();
-              (pp as any).track?.detach?.(); // audio track thôi
-            }
-          });
         });
       };
     }, [participants]);
@@ -83,11 +80,7 @@ export default function VideoGrid({
       const pubs = p.participant.getTrackPublications();
 
       const screenPub = pubs.find(
-        (pub) =>
-          pub.source === Track.Source.ScreenShare &&
-          // LocalTrackPublication: pub.track
-          // RemoteTrackPublication: pub.track hoặc pub.videoTrack
-          (pub as any).track
+        (pub) => pub.source === Track.Source.ScreenShare && (pub as any).track
       );
 
       if (!screenPub) return null;
@@ -123,75 +116,79 @@ export default function VideoGrid({
     };
   });
 
-  // 3. Nếu có share màn hình → màn hình lớn + camera nhỏ
-  if (hasScreenShare && mainScreenShare) {
-    return (
-      <div className="w-full h-full flex flex-col bg-black">
-        {/* Màn hình share lớn */}
-        <div className="flex-1 m-4 rounded-lg overflow-hidden bg-black">
-          <ScreenShareTile
-            participantName={mainScreenShare.participant.name}
-            publication={mainScreenShare.publication}
-          />
-        </div>
-
-        {/* Dãy camera thumbnail bên dưới */}
-        <div className="flex gap-2 px-4 pb-4 overflow-x-auto">
-          {cameraTiles.map(({ participant, publication }) => (
-            <div
-              key={participant.id}
-              className="relative bg-gray-900 rounded-lg overflow-hidden min-w-[160px] max-w-[220px] h-32"
-            >
-              <CameraTile
-                participant={participant}
-                publication={publication}
-                isLocal={participant.isLocal}
-                fallbackName={
-                  participant.isLocal
-                    ? `${currentUserName} (Bạn)`
-                    : participant.name
-                }
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  // 4. Không share màn hình → grid như cũ
   const remotesOnly = participants.filter((p) => !p.isLocal);
   const local = participants.find((p) => p.isLocal) ?? null;
 
+  // ========== LAYOUT CHUNG: audio luôn được render, main trên - thumbnails dưới ==========
   return (
-    <div className="w-full h-full grid gap-4 p-4 md:grid-cols-2 xl:grid-cols-3 bg-black">
-      {/* Local tile */}
+    <div className="w-full h-full flex flex-col bg-black">
       <AudioTracks participants={participants} />
-      {local && (
-        <div className="relative bg-gray-900 rounded-lg overflow-hidden">
-          <CameraTile
-            participant={local}
-            publication={null}
-            isLocal={true}
-            fallbackName={`${currentUserName} (Bạn)`}
-          />
-        </div>
-      )}
 
-      {/* Remote tiles */}
-      {remotesOnly.map((p) => (
-        <div
-          key={p.id}
-          className="relative bg-gray-900 rounded-lg overflow-hidden"
-        >
-          <CameraTile
-            participant={p}
-            publication={null}
-            isLocal={false}
-            fallbackName={p.name}
-          />
-        </div>
-      ))}
+      {hasScreenShare && mainScreenShare ? (
+        // ===== CASE CÓ SHARE MÀN HÌNH: màn hình share to nhất, camera thành thumbnail =====
+        <>
+          <div className="flex-1 m-4 rounded-lg overflow-hidden bg-black">
+            <ScreenShareTile
+              participantName={mainScreenShare.participant.name}
+              publication={mainScreenShare.publication}
+            />
+          </div>
+
+          <div className="flex gap-2 px-4 pb-4 overflow-x-auto">
+            {cameraTiles.map(({ participant, publication }) => (
+              <div
+                key={participant.id}
+                className="relative bg-gray-900 rounded-lg overflow-hidden min-w-[160px] max-w-[220px] h-32"
+              >
+                <CameraTile
+                  participant={participant}
+                  publication={publication}
+                  isLocal={participant.isLocal}
+                  fallbackName={
+                    participant.isLocal
+                      ? `${currentUserName} (Bạn)`
+                      : participant.name
+                  }
+                />
+              </div>
+            ))}
+          </div>
+        </>
+      ) : (
+        // ===== CASE KHÔNG SHARE MÀN HÌNH: mình to nhất, người khác thành thumbnail dưới =====
+        <>
+          <div className="flex-1 m-4 rounded-lg overflow-hidden bg-gray-900">
+            {local ? (
+              <CameraTile
+                participant={local}
+                publication={null}
+                isLocal={true}
+                fallbackName={`${currentUserName} (Bạn)`}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-white/60">
+                Chưa kết nối camera
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-2 px-4 pb-4 overflow-x-auto">
+            {remotesOnly.map((p) => (
+              <div
+                key={p.id}
+                className="relative bg-gray-900 rounded-lg overflow-hidden min-w-[160px] max-w-[220px] h-32"
+              >
+                <CameraTile
+                  participant={p}
+                  publication={null}
+                  isLocal={false}
+                  fallbackName={p.name}
+                />
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -212,49 +209,94 @@ function CameraTile({
   fallbackName,
 }: CameraTileProps) {
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
+  const [cameraTrack, setCameraTrack] = React.useState<any | null>(null);
 
-  // Lấy participant của LiveKit
   const lkParticipant = participant.participant;
 
-  // Lấy danh sách track publications
-  const pubs = lkParticipant.getTrackPublications();
-
-  // Ưu tiên dùng publication truyền vào, nếu không có thì tự tìm track camera
-  let cameraPub: any = publication ?? null;
-
-  if (!cameraPub) {
-    cameraPub =
-      pubs.find(
-        (pp) =>
-          pp.source === Track.Source.Camera &&
-          // remote: isSubscribed; local: có track
-          ((pp as any).isSubscribed === undefined ||
-            (pp as any).isSubscribed) &&
-          ((pp as any).videoTrack || (pp as any).track)
-      ) ?? null;
-  }
-
-  const cameraTrack =
-    (cameraPub as any)?.videoTrack ?? (cameraPub as any)?.track ?? null;
-
-  const hasVideo = !!cameraTrack;
-
+  // Luôn lấy track camera MỚI NHẤT & kiểm tra mute/disable để hiện icon VideoOff đúng
   React.useEffect(() => {
-    if (!videoRef.current) return;
+    const getLatestCameraTrack = () => {
+      const pubs = lkParticipant.getTrackPublications();
+
+      let camPub: any = publication ?? null;
+
+      if (!camPub) {
+        camPub =
+          pubs.find(
+            (pp) =>
+              pp.source === Track.Source.Camera &&
+              ((pp as any).isSubscribed === undefined ||
+                (pp as any).isSubscribed) &&
+              ((pp as any).videoTrack || (pp as any).track)
+          ) ?? null;
+      }
+
+      const track = camPub?.videoTrack ?? camPub?.track ?? null;
+
+      if (!track) return null;
+
+      const muted =
+        (camPub as any)?.isMuted ??
+        (track as any)?.isMuted ??
+        (track as any)?.isEnabled === false;
+
+      return muted ? null : track;
+    };
+
+    const updateTrack = () => {
+      const latest = getLatestCameraTrack();
+      setCameraTrack(latest);
+    };
+
+    // chạy lần đầu
+    updateTrack();
+
+    // lắng nghe thay đổi track (bật/tắt camera, subscribe/unsubscribe,...)
+    const ev = ParticipantEvent;
+    lkParticipant.on(ev.TrackPublished, updateTrack);
+    lkParticipant.on(ev.TrackUnpublished, updateTrack);
+    lkParticipant.on(ev.TrackSubscribed, updateTrack);
+    lkParticipant.on(ev.TrackUnsubscribed, updateTrack);
+    lkParticipant.on(ev.TrackMuted, updateTrack);
+    lkParticipant.on(ev.TrackUnmuted, updateTrack);
+
+    return () => {
+      const ev = ParticipantEvent;
+      lkParticipant.off(ev.TrackPublished, updateTrack);
+      lkParticipant.off(ev.TrackUnpublished, updateTrack);
+      lkParticipant.off(ev.TrackSubscribed, updateTrack);
+      lkParticipant.off(ev.TrackUnsubscribed, updateTrack);
+      lkParticipant.off(ev.TrackMuted, updateTrack);
+      lkParticipant.off(ev.TrackUnmuted, updateTrack);
+    };
+  }, [lkParticipant, publication]);
+
+  // Attach/detach vào video element
+  React.useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
 
     if (!cameraTrack) {
-      // không có track → clear video element
-      videoRef.current.srcObject = null;
+      el.srcObject = null;
       return;
     }
 
-    // có track → attach vào video
-    cameraTrack.attach(videoRef.current);
+    try {
+      cameraTrack.attach(el);
+    } catch (e) {
+      // ignore
+    }
 
     return () => {
-      cameraTrack.detach(videoRef.current!);
+      try {
+        cameraTrack.detach(el);
+      } catch (e) {
+        // ignore
+      }
     };
   }, [cameraTrack]);
+
+  const hasVideo = !!cameraTrack;
 
   return (
     <>
@@ -267,7 +309,6 @@ function CameraTile({
           className="w-full h-full object-cover bg-black"
         />
       ) : (
-        // Placeholder khi không có camera
         <div className="w-full h-full flex items-center justify-center bg-gray-900">
           <VideoOff className="w-10 h-10 text-gray-500" />
         </div>
@@ -302,11 +343,20 @@ function ScreenShareTile({
       return;
     }
 
-    track.attach(videoRef.current);
+    try {
+      track.attach(videoRef.current);
+    } catch (e) {
+      // ignore
+    }
+
     return () => {
-      track.detach(videoRef.current!);
+      try {
+        track.detach(videoRef.current!);
+      } catch (e) {
+        // ignore
+      }
     };
-  }, [publication?.track, publication?.videoTrack]);
+  }, [publication]);
 
   return (
     <div className="relative w-full h-full bg-black">
