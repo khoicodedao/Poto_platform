@@ -3,6 +3,7 @@
 import type React from "react";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { useSession } from "@/hooks/useSession";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,12 @@ import {
   type ChatMessage,
 } from "@/lib/actions/chat";
 import { getFiles } from "@/lib/actions/files";
+
+// Dynamic import Excalidraw để tránh lỗi SSR
+const Excalidraw = dynamic(
+  async () => (await import("@excalidraw/excalidraw")).Excalidraw,
+  { ssr: false }
+);
 
 export default function ClassroomPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -50,6 +57,12 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
 
   // auto scroll chat xuống cuối
   const chatEndRef = useRef<HTMLDivElement | null>(null);
+
+  // Sidebar tab: chat / participants / files
+  const [sidebarTab, setSidebarTab] = useState("chat");
+
+  // Whiteboard full màn hình
+  const [isWhiteboardOpen, setIsWhiteboardOpen] = useState(false);
 
   const {
     room,
@@ -153,7 +166,7 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
     }
   };
 
-  // Load chat + files (và có thể polling nhẹ)
+  // Load chat + files
   useEffect(() => {
     let isMounted = true;
 
@@ -175,7 +188,7 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
 
     loadData();
 
-    // OPTIONAL: polling mỗi 4s để update chat từ người khác
+    // polling mỗi 4s để update chat
     const interval = setInterval(loadData, 4000);
 
     return () => {
@@ -199,7 +212,6 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
       const result = await sendChatMessage?.(classId, chatMessage);
       if (!result || !result.success) return;
 
-      // dùng message trả về từ server (đã có user info)
       setChatMessages((prev) => [...prev, result.message]);
       setChatMessage("");
     } catch (error) {
@@ -242,188 +254,229 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      <header className="bg-gray-800 border-b border-gray-700">
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-white font-semibold">
-                Lớp học trực tuyến - Phòng {params.id}
-              </h1>
-              <Badge variant="destructive" className="animate-pulse">
-                LIVE
-              </Badge>
-            </div>
-            <div className="text-white text-sm">
-              {participants.length} người tham gia
+    <>
+      <div className="min-h-screen bg-gray-900">
+        <header className="bg-gray-800 border-b border-gray-700">
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <h1 className="text-white font-semibold">
+                  Lớp học trực tuyến - Phòng {params.id}
+                </h1>
+                <Badge variant="destructive" className="animate-pulse">
+                  LIVE
+                </Badge>
+              </div>
+              <div className="text-white text-sm">
+                {participants.length} người tham gia
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <div className="flex h-[calc(100vh-73px)]">
-        {/* LEFT: video */}
-        <div className="flex-1 flex flex-col">
-          <div className="flex-1">
-            <VideoGrid
-              localVideoRef={localVideoRef}
-              participants={participants}
-              currentUserId={currentUserId}
-              currentUserName={currentUserName}
+        <div className="flex h-[calc(100vh-73px)]">
+          {/* LEFT: video */}
+          <div className="flex-1 flex flex-col">
+            <div className="flex-1">
+              <VideoGrid
+                localVideoRef={localVideoRef}
+                participants={participants}
+                currentUserId={currentUserId}
+                currentUserName={currentUserName}
+                isAudioEnabled={isAudioEnabled}
+                isVideoEnabled={isVideoEnabled}
+              />
+            </div>
+
+            <VideoControls
+              isScreenSharing={isScreenSharing}
               isAudioEnabled={isAudioEnabled}
               isVideoEnabled={isVideoEnabled}
+              isRecording={isRecording}
+              isFullscreen={isFullscreen}
+              participantCount={participants.length}
+              isSidebarOpen={isSidebarOpen}
+              onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
+              onToggleAudio={toggleAudio}
+              onToggleVideo={toggleVideo}
+              onToggleRecording={handleToggleRecording}
+              onToggleFullscreen={handleToggleFullscreen}
+              onLeaveCall={handleLeaveCall}
+              onShareScreen={handleShareScreen}
             />
           </div>
 
-          <VideoControls
-            isScreenSharing={isScreenSharing}
-            isAudioEnabled={isAudioEnabled}
-            isVideoEnabled={isVideoEnabled}
-            isRecording={isRecording}
-            isFullscreen={isFullscreen}
-            participantCount={participants.length}
-            isSidebarOpen={isSidebarOpen}
-            onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
-            onToggleAudio={toggleAudio}
-            onToggleVideo={toggleVideo}
-            onToggleRecording={handleToggleRecording}
-            onToggleFullscreen={handleToggleFullscreen}
-            onLeaveCall={handleLeaveCall}
-            onShareScreen={handleShareScreen}
-          />
-        </div>
+          {/* RIGHT: sidebar */}
+          {isSidebarOpen && (
+            <div className="w-80 bg-white border-l border-gray-200 flex flex-col">
+              <Tabs
+                value={sidebarTab}
+                onValueChange={(value) => {
+                  if (value === "whiteboard") {
+                    setIsWhiteboardOpen(true);
+                    // không đổi sidebarTab để vẫn giữ tab đang xem (vd: chat)
+                    return;
+                  }
+                  setSidebarTab(value);
+                }}
+                className="flex-1 flex flex-col"
+              >
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="chat">
+                    <MessageCircle className="h-4 w-4" />
+                  </TabsTrigger>
+                  <TabsTrigger value="participants">
+                    <Users className="h-4 w-4" />
+                  </TabsTrigger>
+                  <TabsTrigger value="files">
+                    <FileText className="h-4 w-4" />
+                  </TabsTrigger>
+                  <TabsTrigger value="whiteboard">
+                    <PenTool className="h-4 w-4" />
+                  </TabsTrigger>
+                </TabsList>
 
-        {/* RIGHT: sidebar */}
-        {isSidebarOpen && (
-          <div className="w-80 bg-white border-l border-gray-200 flex flex-col">
-            <Tabs defaultValue="chat" className="flex-1 flex flex-col">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="chat">
-                  <MessageCircle className="h-4 w-4" />
-                </TabsTrigger>
-                <TabsTrigger value="participants">
-                  <Users className="h-4 w-4" />
-                </TabsTrigger>
-                <TabsTrigger value="files">
-                  <FileText className="h-4 w-4" />
-                </TabsTrigger>
-                <TabsTrigger value="whiteboard">
-                  <PenTool className="h-4 w-4" />
-                </TabsTrigger>
-              </TabsList>
-
-              {/* Chat */}
-              <TabsContent value="chat" className="flex-1 flex flex-col p-4">
-                <div className="flex-1 space-y-4 overflow-y-auto mb-4 max-h-96">
-                  {chatMessages.map((msg) => (
-                    <div key={msg.id} className="flex space-x-2">
-                      <Avatar className="w-8 h-8">
-                        <AvatarFallback className="text-xs">
-                          {msg.userName?.[0] ?? "U"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm font-medium">
-                            {msg.userName}
-                          </span>
-                          {msg.userRole === "teacher" && (
-                            <Badge variant="secondary" className="text-xs">
-                              Giáo viên
-                            </Badge>
-                          )}
-                          <span className="text-xs text-gray-500">
-                            {new Date(msg.createdAt).toLocaleTimeString(
-                              "vi-VN",
-                              {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              }
+                {/* Chat */}
+                <TabsContent value="chat" className="flex-1 flex flex-col p-4">
+                  <div className="flex-1 space-y-4 overflow-y-auto mb-4 max-h-96">
+                    {chatMessages.map((msg) => (
+                      <div key={msg.id} className="flex space-x-2">
+                        <Avatar className="w-8 h-8">
+                          <AvatarFallback className="text-xs">
+                            {msg.userName?.[0] ?? "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm font-medium">
+                              {msg.userName}
+                            </span>
+                            {msg.userRole === "teacher" && (
+                              <Badge variant="secondary" className="text-xs">
+                                Giáo viên
+                              </Badge>
                             )}
-                          </span>
+                            <span className="text-xs text-gray-500">
+                              {new Date(msg.createdAt).toLocaleTimeString(
+                                "vi-VN",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                }
+                              )}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-700 mt-1">
+                            {msg.message}
+                          </p>
                         </div>
-                        <p className="text-sm text-gray-700 mt-1">
-                          {msg.message}
-                        </p>
+                      </div>
+                    ))}
+                    <div ref={chatEndRef} />
+                  </div>
+                  <form onSubmit={handleSendMessage} className="flex space-x-2">
+                    <Input
+                      placeholder="Nhập tin nhắn..."
+                      value={chatMessage}
+                      onChange={(e) => setChatMessage(e.target.value)}
+                    />
+                    <Button type="submit" size="sm">
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </form>
+                </TabsContent>
+
+                {/* Participants */}
+                <TabsContent
+                  value="participants"
+                  className="flex-1 p-4 space-y-3 overflow-y-auto"
+                >
+                  {participants.map((p) => (
+                    <div
+                      key={p.id}
+                      className="flex items-center justify-between"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <Avatar className="w-8 h-8">
+                          <AvatarFallback>{p.name[0]}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium">
+                            {p.name} {p.isLocal ? "(Bạn)" : ""}
+                          </p>
+                          <p className="text-xs text-gray-500 capitalize">
+                            {p.id.includes("teacher")
+                              ? "Giáo viên"
+                              : "Học viên"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-green-500 rounded-full" />
+                        <div className="w-2 h-2 bg-green-500 rounded-full" />
                       </div>
                     </div>
                   ))}
-                  <div ref={chatEndRef} />
-                </div>
-                <form onSubmit={handleSendMessage} className="flex space-x-2">
-                  <Input
-                    placeholder="Nhập tin nhắn..."
-                    value={chatMessage}
-                    onChange={(e) => setChatMessage(e.target.value)}
-                  />
-                  <Button type="submit" size="sm">
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </form>
-              </TabsContent>
+                </TabsContent>
 
-              {/* Participants */}
-              <TabsContent
-                value="participants"
-                className="flex-1 p-4 space-y-3 overflow-y-auto"
-              >
-                {participants.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="w-8 h-8">
-                        <AvatarFallback>{p.name[0]}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-sm font-medium">
-                          {p.name} {p.isLocal ? "(Bạn)" : ""}
-                        </p>
-                        <p className="text-xs text-gray-500 capitalize">
-                          {p.id.includes("teacher") ? "Giáo viên" : "Học viên"}
-                        </p>
+                {/* Files */}
+                <TabsContent
+                  value="files"
+                  className="flex-1 p-4 overflow-y-auto space-y-3"
+                >
+                  {classFiles.length === 0 ? (
+                    <p className="text-sm text-gray-500">
+                      Chưa có tài liệu nào.
+                    </p>
+                  ) : (
+                    classFiles.map((file) => (
+                      <div key={file.id} className="text-sm border rounded p-2">
+                        <a
+                          href={file.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 underline"
+                        >
+                          {file.name}
+                        </a>
                       </div>
-                    </div>
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-green-500 rounded-full" />
-                      <div className="w-2 h-2 bg-green-500 rounded-full" />
-                    </div>
-                  </div>
-                ))}
-              </TabsContent>
-
-              {/* Files */}
-              <TabsContent
-                value="files"
-                className="flex-1 p-4 overflow-y-auto space-y-3"
-              >
-                {classFiles.length === 0 ? (
-                  <p className="text-sm text-gray-500">Chưa có tài liệu nào.</p>
-                ) : (
-                  classFiles.map((file) => (
-                    <div key={file.id} className="text-sm border rounded p-2">
-                      <a
-                        href={file.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 underline"
-                      >
-                        {file.name}
-                      </a>
-                    </div>
-                  ))
-                )}
-              </TabsContent>
-
-              {/* Whiteboard */}
-              <TabsContent
-                value="whiteboard"
-                className="flex-1 p-4 text-center text-gray-500 text-sm"
-              >
-                <p>Tính năng bảng trắng đang được phát triển.</p>
-              </TabsContent>
-            </Tabs>
-          </div>
-        )}
+                    ))
+                  )}
+                </TabsContent>
+              </Tabs>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* WHITEBOARD FULL MÀN HÌNH */}
+      {isWhiteboardOpen && (
+        <div className="fixed inset-0 z-50 bg-gray-900">
+          <div className="flex flex-col h-full">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-700 text-white">
+              <div>
+                <span className="font-semibold">Bảng trắng</span>
+                <span className="ml-2 text-xs text-gray-300">
+                  (Để chia sẻ cho học viên: bấm Share Screen và chọn cửa sổ này
+                  trong LiveKit)
+                </span>
+              </div>
+              <div className="space-x-2">
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => setIsWhiteboardOpen(false)}
+                >
+                  Thoát bảng trắng
+                </Button>
+              </div>
+            </div>
+            <div className="flex-1 bg-white">
+              <Excalidraw />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

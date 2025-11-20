@@ -11,6 +11,7 @@
     "db:seed": "tsx db/seed.ts"
   },
   "dependencies": {
+    "@excalidraw/excalidraw": "^0.18.0",
     "@hookform/resolvers": "^3.9.1",
     "@livekit/components-react": "^2.9.16",
     "@livekit/components-styles": "^1.2.0",
