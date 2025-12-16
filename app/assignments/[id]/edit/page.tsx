@@ -1,58 +1,86 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { ArrowLeft, Save, Trash2 } from "lucide-react"
-import Link from "next/link"
-import { useRouter, useParams } from "next/navigation"
-import { getAssignmentById, updateAssignment, deleteAssignment } from "@/lib/actions/assignments"
-import { getMyClasses } from "@/lib/actions/classes"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowLeft, Save, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { useRouter, useParams } from "next/navigation";
+import {
+  getAssignmentById,
+  updateAssignment,
+  deleteAssignment,
+} from "@/lib/actions/assignments";
+import { getMyClasses } from "@/lib/actions/classes";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function EditAssignmentPage() {
-  const router = useRouter()
-  const params = useParams()
-  const assignmentId = Number(params.id)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [classes, setClasses] = useState<any[]>([])
+  const router = useRouter();
+  const params = useParams();
+  const assignmentId = Number(params.id);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [classes, setClasses] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     classId: 0,
     dueDate: "",
     maxScore: 100,
-  })
+  });
 
   useEffect(() => {
     const loadData = async () => {
       const [assignmentData, classList] = await Promise.all([
         getAssignmentById(assignmentId),
-        getMyClasses()
-      ])
-      
+        getMyClasses(),
+      ]);
+
       if (assignmentData) {
         setFormData({
           title: assignmentData.title,
           description: assignmentData.description || "",
           classId: assignmentData.classId,
-          dueDate: assignmentData.dueDate ? new Date(assignmentData.dueDate).toISOString().split('T')[0] : "",
+          dueDate: assignmentData.dueDate
+            ? new Date(assignmentData.dueDate).toISOString().split("T")[0]
+            : "",
           maxScore: assignmentData.maxScore || 100,
-        })
+        });
       }
-      setClasses(classList)
-    }
-    loadData()
-  }, [assignmentId])
+      setClasses(classList);
+    };
+    loadData();
+  }, [assignmentId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+    e.preventDefault();
+    setIsLoading(true);
 
     try {
       const updateData: any = {
@@ -60,49 +88,49 @@ export default function EditAssignmentPage() {
         description: formData.description,
         classId: formData.classId,
         maxScore: formData.maxScore,
-      }
-      
+      };
+
       if (formData.dueDate) {
-        updateData.dueDate = new Date(formData.dueDate)
+        updateData.dueDate = new Date(formData.dueDate);
       }
 
-      const result = await updateAssignment(assignmentId, updateData)
+      const result = await updateAssignment(assignmentId, updateData);
       if (result.success) {
-        router.push("/assignments")
+        router.push("/assignments");
       } else {
-        alert(result.error || "Có lỗi xảy ra khi cập nhật bài tập")
+        alert(result.error || "Có lỗi xảy ra khi cập nhật bài tập");
       }
     } catch (error) {
-      console.error("Error updating assignment:", error)
-      alert("Có lỗi xảy ra khi cập nhật bài tập")
+      console.error("Error updating assignment:", error);
+      alert("Có lỗi xảy ra khi cập nhật bài tập");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleDelete = async () => {
-    setIsDeleting(true)
+    setIsDeleting(true);
     try {
-      const result = await deleteAssignment(assignmentId)
+      const result = await deleteAssignment(assignmentId);
       if (result.success) {
-        router.push("/assignments")
+        router.push("/assignments");
       } else {
-        alert(result.error || "Có lỗi xảy ra khi xóa bài tập")
+        alert(result.error || "Có lỗi xảy ra khi xóa bài tập");
       }
     } catch (error) {
-      console.error("Error deleting assignment:", error)
-      alert("Có lỗi xảy ra khi xóa bài tập")
+      console.error("Error deleting assignment:", error);
+      alert("Có lỗi xảy ra khi xóa bài tập");
     } finally {
-      setIsDeleting(false)
+      setIsDeleting(false);
     }
-  }
+  };
 
   const handleInputChange = (field: string, value: string | number) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
-    }))
-  }
+    }));
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -143,7 +171,9 @@ export default function EditAssignmentPage() {
                 <Textarea
                   id="description"
                   value={formData.description}
-                  onChange={(e) => handleInputChange("description", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("description", e.target.value)
+                  }
                   placeholder="Mô tả chi tiết về bài tập..."
                   rows={4}
                 />
@@ -153,7 +183,9 @@ export default function EditAssignmentPage() {
                 <Label htmlFor="class">Lớp học *</Label>
                 <Select
                   value={formData.classId.toString()}
-                  onValueChange={(value) => handleInputChange("classId", Number(value))}
+                  onValueChange={(value) =>
+                    handleInputChange("classId", Number(value))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Chọn lớp học" />
@@ -175,7 +207,9 @@ export default function EditAssignmentPage() {
                     id="dueDate"
                     type="date"
                     value={formData.dueDate}
-                    onChange={(e) => handleInputChange("dueDate", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("dueDate", e.target.value)
+                    }
                   />
                 </div>
 
@@ -187,7 +221,9 @@ export default function EditAssignmentPage() {
                     min="0"
                     max="1000"
                     value={formData.maxScore}
-                    onChange={(e) => handleInputChange("maxScore", Number(e.target.value))}
+                    onChange={(e) =>
+                      handleInputChange("maxScore", Number(e.target.value))
+                    }
                   />
                 </div>
               </div>
@@ -215,14 +251,20 @@ export default function EditAssignmentPage() {
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Bạn có chắc chắn muốn xóa?</AlertDialogTitle>
+                    <AlertDialogTitle>
+                      Bạn có chắc chắn muốn xóa?
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
-                      Hành động này không thể hoàn tác. Tất cả bài nộp liên quan sẽ bị xóa vĩnh viễn.
+                      Hành động này không thể hoàn tác. Tất cả bài nộp liên quan
+                      sẽ bị xóa vĩnh viễn.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Hủy</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+                    <AlertDialogAction
+                      onClick={handleDelete}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
                       Xóa bài tập
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -233,5 +275,5 @@ export default function EditAssignmentPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }
