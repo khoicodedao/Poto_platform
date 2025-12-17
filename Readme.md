@@ -28,16 +28,39 @@ This repository contains an online learning platform with a Next.js frontend (Ap
 - `NEXT_PUBLIC_...` - any public client env variables for Next.js.
 - LiveKit / real-time keys if using a hosted LiveKit instance (e.g. `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`).
 
-## Project Structure (high level)
+## Cấu trúc dự án
 
-- `app/` — Next.js App Router UI, pages and server API routes under `app/api`.
-- `components/` — shared React components and UI primitives.
-- `db/` — Drizzle schema (`db/schema.ts`), DB entry `db/index.ts`, seeds `db/seed.ts`.
-- `drizzle/` — generated migrations / output.
-- `lib/` — client wrappers, utilities, and server-side actions (`lib/actions`).
-- `hooks/` — React hooks used by the app (WebRTC, LiveKit helpers, session hooks).
-- `server/` — small standalone signaling server and helper scripts (`server/signaling-server.js`).
-- `public/` — static assets.
+```
+.
+├─ app/
+│  ├─ api/                # API routes Next.js (auth, lớp học, LiveKit token, ...)
+│  ├─ assignments/        # Trang CRUD bài tập, upload bài làm
+│  ├─ classes/ & classroom# Lớp học, phòng học live, UI điều khiển video/live stream
+│  ├─ files/              # Trang quản lý file, download
+│  ├─ auth/, unauthorized/# Trang đăng nhập & trang cấm truy cập
+│  ├─ layout.tsx, page.tsx, globals.css
+├─ components/
+│  ├─ ui/                 # Bộ UI (button, input, dialog, ...)
+│  ├─ assignments/, files/# Widget chuyên biệt cho từng module
+│  ├─ top-nav.tsx, user-menu.tsx, video-*.tsx, auth-guard.tsx
+├─ db/                    # Kết nối Drizzle và schema (schema.ts, index.ts, seed.ts)
+├─ drizzle/               # Output migrations do drizzle-kit sinh ra
+├─ lib/
+│  ├─ actions/            # Server actions: lớp học, bài tập, file, LiveKit token
+│  ├─ auth/, validators/  # Helper auth, schema Zod, util chung
+│  ├─ uploadthing.ts, livekit.ts, utils.ts
+├─ hooks/                 # Custom React hooks (LiveKit, WebRTC, session)
+├─ server/                # Signaling server cho WebRTC (`signaling-server.js`)
+├─ public/                # Static assets (logo, icons)
+├─ styles/                # Tailwind layer bổ sung
+├─ config files           # tailwind.config.ts, drizzle.config.ts, tsconfig.json, ...
+```
+
+- `app/` chứa toàn bộ UI App Router và API routes; mọi request phía client đi vào `app/api/**` trước khi xuống tầng hành động.
+- `lib/` + `db/` là tầng domain: `db/index.ts` khởi tạo client Postgres (Drizzle), `lib/actions/*` ghép schema + logic nghiệp vụ.
+- `components/` và `hooks/` gom phần tái sử dụng ở client (UI + state/video hooks) để tránh logic lặp lại giữa trang lớp, bài tập, file.
+- `server/` hoạt động tách biệt khỏi Next.js, khởi chạy bằng Node để hỗ trợ signaling WebRTC khi cần.
+- Toàn bộ cấu hình build/lint (Tailwind, PostCSS, Drizzle, TS) đặt ở root để dễ chạy trên CI hoặc các script npm.
 
 ## Web (Frontend)
 
