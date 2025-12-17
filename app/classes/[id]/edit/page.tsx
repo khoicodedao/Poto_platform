@@ -19,7 +19,7 @@ export default function EditClassPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [formData, setFormData] = useState({
-    name: "",
+    title: "",
     description: "",
     schedule: "",
   })
@@ -29,7 +29,7 @@ export default function EditClassPage() {
       const classData = await getClassById(classId)
       if (classData) {
         setFormData({
-          name: classData.name,
+          title: classData.name,
           description: classData.description || "",
           schedule: classData.schedule || "",
         })
@@ -105,11 +105,11 @@ export default function EditClassPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="name">Tên lớp học *</Label>
+                <Label htmlFor="title">Tên lớp học *</Label>
                 <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange("name", e.target.value)}
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => handleInputChange("title", e.target.value)}
                   placeholder="Ví dụ: Toán học cơ bản"
                   required
                 />

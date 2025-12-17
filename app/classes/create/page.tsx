@@ -24,6 +24,7 @@ import { ArrowLeft, Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClass, getStudents } from "@/lib/actions/classes";
+import { useSession } from "@/hooks/useSession";
 
 type Student = {
   id: number;
@@ -33,6 +34,7 @@ type Student = {
 
 export default function CreateClassPage() {
   const router = useRouter();
+  const { user, loading: sessionLoading } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedStudentIds, setSelectedStudentIds] = useState<number[]>([]);
@@ -42,7 +44,7 @@ export default function CreateClassPage() {
     description: "",
     schedule: "",
     max_students: 20,
-    teacher_id: 1, // TODO: lấy từ session user nếu là giáo viên
+    teacher_id: 0,
   });
 
   useEffect(() => {
@@ -52,6 +54,15 @@ export default function CreateClassPage() {
       setStudents(data);
     })();
   }, []);
+
+  useEffect(() => {
+    if (user?.id && user.role === "teacher") {
+      setFormData((prev) => ({
+        ...prev,
+        teacher_id: user.id,
+      }));
+    }
+  }, [user?.id, user?.role]);
 
   const toggleStudent = (id: number) => {
     setSelectedStudentIds((prev) =>
@@ -64,6 +75,16 @@ export default function CreateClassPage() {
     setIsLoading(true);
 
     try {
+      if (!user || user.role !== "teacher") {
+        alert("Chỉ giáo viên mới có thể tạo lớp học");
+        return;
+      }
+
+      if (!formData.teacher_id) {
+        alert("Không xác định được giáo viên cho lớp học");
+        return;
+      }
+
       const result = await createClass({
         ...formData,
         student_ids: selectedStudentIds,
@@ -89,22 +110,36 @@ export default function CreateClassPage() {
     }));
   };
 
+  if (sessionLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="text-gray-600">Đang tải thông tin...</p>
+      </div>
+    );
+  }
+
+  if (!user || user.role !== "teacher") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle>Không thể truy cập</CardTitle>
+            <CardDescription>
+              Chỉ giáo viên mới có quyền tạo lớp học mới.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/classes">
+              <Button>Quay lại danh sách lớp</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Link href="/classes" className="flex items-center space-x-2">
-                <ArrowLeft className="h-5 w-5" />
-                <span>Quay lại</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Card>
           <CardHeader>

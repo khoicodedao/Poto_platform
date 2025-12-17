@@ -17,6 +17,7 @@ import {
   Filter,
   Plus,
   Video,
+  ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
@@ -35,39 +36,20 @@ export default async function ClassesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Link href="/" className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">E</span>
-                </div>
-                <h1 className="text-xl font-bold text-gray-900">EduPlatform</h1>
-              </Link>
-            </div>
-            <div className="flex items-center space-x-4">
-              {user.role === "teacher" || user.role === "admin" ? (
-                <Link href="/classes/create">
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Tạo lớp học
-                  </Button>
-                </Link>
-              ) : null}
-              <Avatar>
-                <AvatarImage src="/placeholder.svg?height=32&width=32" />
-                <AvatarFallback>
-                  {user.name?.[0]?.toUpperCase() ?? "U"}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-          </div>
-        </div>
-      </header>
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <nav className="mb-6 text-sm text-gray-500" aria-label="Breadcrumb">
+          <ol className="flex items-center space-x-2">
+            <li>
+              <Link href="/" className="hover:text-gray-900">
+                Trang chủ
+              </Link>
+            </li>
+            <li className="text-gray-400">
+              <ChevronRight className="h-4 w-4" />
+            </li>
+            <li className="font-medium text-gray-700">Lớp học</li>
+          </ol>
+        </nav>
         {/* Page Header */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">

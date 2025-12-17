@@ -95,6 +95,7 @@ export const files = pgTable("files", {
   url: text("url").notNull(),
   type: varchar("type", { length: 100 }),
   size: integer("size"),
+  downloadCount: integer("download_count").notNull().default(0),
   classId: integer("class_id").references(() => classes.id, {
     onDelete: "cascade",
   }),

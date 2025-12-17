@@ -1,8 +1,16 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   FileText,
   Download,
@@ -18,98 +26,152 @@ import {
   MoreVertical,
   Share2,
   Eye,
-} from "lucide-react"
-import Link from "next/link"
-import { getFiles, getFilesByCategory, incrementDownload } from "@/lib/actions/files"
+} from "lucide-react";
+import { getFiles, type FileWithMeta } from "@/lib/actions/files";
+import { getCurrentUser } from "@/lib/auth";
+import { getClasses, getClassesForUser } from "@/lib/actions/classes";
+import { UploadFileDialog } from "@/components/files/upload-dialog";
+import { DownloadButton } from "@/components/files/download-button";
 
-export default async function FilesPage() {
-  const [allFiles, lectureFiles, videoFiles, audioFiles] = await Promise.all([
-    getFiles(),
-    getFilesByCategory("lecture"),
-    getFilesByCategory("video"),
-    getFilesByCategory("audio"),
-  ])
-
-  const assignmentFiles = allFiles.filter((f) => f.category === "assignment")
-
-  const getFileIcon = (type: string) => {
-    switch (type) {
-      case "pdf":
-      case "doc":
-        return <FileText className="h-8 w-8 text-red-500" />
-      case "video":
-        return <Video className="h-8 w-8 text-purple-500" />
-      case "audio":
-        return <Music className="h-8 w-8 text-green-500" />
-      case "presentation":
-        return <FileText className="h-8 w-8 text-orange-500" />
-      case "archive":
-        return <Archive className="h-8 w-8 text-blue-500" />
-      case "image":
-        return <ImageIcon className="h-8 w-8 text-pink-500" />
-      default:
-        return <File className="h-8 w-8 text-gray-500" />
-    }
+const getFileIcon = (type: string) => {
+  const normalized = type.toLowerCase();
+  if (normalized.includes("video")) return <Video className="h-8 w-8 text-purple-500" />;
+  if (normalized.includes("audio")) return <Music className="h-8 w-8 text-green-500" />;
+  if (normalized.includes("image")) return <ImageIcon className="h-8 w-8 text-pink-500" />;
+  if (normalized.includes("zip") || normalized.includes("rar")) {
+    return <Archive className="h-8 w-8 text-blue-500" />;
   }
-
-  const getCategoryBadge = (category: string) => {
-    const variants = {
-      lecture: { variant: "default" as const, label: "Bài giảng" },
-      assignment: { variant: "secondary" as const, label: "Bài tập" },
-      video: { variant: "outline" as const, label: "Video" },
-      audio: { variant: "outline" as const, label: "Audio" },
-      reference: { variant: "secondary" as const, label: "Tài liệu tham khảo" },
-      resource: { variant: "outline" as const, label: "Tài nguyên" },
-    }
-
-    const config = variants[category as keyof typeof variants] || variants.reference
-    return <Badge variant={config.variant}>{config.label}</Badge>
+  if (normalized.includes("pdf")) return <FileText className="h-8 w-8 text-red-500" />;
+  if (normalized.includes("msword") || normalized.includes("word")) {
+    return <FileText className="h-8 w-8 text-orange-500" />;
   }
+  return <File className="h-8 w-8 text-gray-500" />;
+};
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "0 Bytes"
-    const k = 1024
-    const sizes = ["Bytes", "KB", "MB", "GB"]
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
-  }
+const getCategoryBadge = (category: FileWithMeta["category"]) => {
+  const meta = {
+    lecture: { variant: "default" as const, label: "Bài giảng" },
+    assignment: { variant: "secondary" as const, label: "Bài tập" },
+    video: { variant: "outline" as const, label: "Video" },
+    audio: { variant: "outline" as const, label: "Audio" },
+    reference: { variant: "secondary" as const, label: "Tài liệu tham khảo" },
+    resource: { variant: "outline" as const, label: "Tài nguyên" },
+  };
 
-  const handleDownload = async (fileId: number) => {
-    await incrementDownload(fileId)
+  const config = meta[category] ?? meta.reference;
+  return <Badge variant={config.variant}>{config.label}</Badge>;
+};
+
+const formatFileSize = (bytes?: number | null) => {
+  if (!bytes || bytes <= 0) return "0 Bytes";
+  const units = ["Bytes", "KB", "MB", "GB"];
+  const index = Math.floor(Math.log(bytes) / Math.log(1024));
+  const value = bytes / Math.pow(1024, index);
+  return `${value.toFixed(index === 0 ? 0 : 2)} ${units[index]}`;
+};
+
+const formatDate = (value?: Date | null) => {
+  if (!value) return "—";
+  return new Date(value).toLocaleDateString("vi-VN");
+};
+
+const FilesGrid = ({ files }: { files: FileWithMeta[] }) => {
+  if (files.length === 0) {
+    return (
+      <p className="text-sm text-gray-500">
+        Chưa có tài liệu nào trong danh mục này.
+      </p>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Link href="/" className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">E</span>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {files.map((file) => (
+        <Card key={file.id} className="hover:shadow-lg transition-shadow">
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center space-x-3">
+                {getFileIcon(file.type)}
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="text-sm font-medium truncate">
+                    {file.name}
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    {file.classTitle ?? "Tài liệu chung"} •{" "}
+                    {file.uploaderName ?? "Ẩn danh"}
+                  </CardDescription>
                 </div>
-                <h1 className="text-xl font-bold text-gray-900">EduPlatform</h1>
-              </Link>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button>
-                <Upload className="h-4 w-4 mr-2" />
-                Tải lên
+              </div>
+              <Button variant="ghost" size="sm">
+                <MoreVertical className="h-4 w-4" />
               </Button>
             </div>
-          </div>
-        </div>
-      </header>
+          </CardHeader>
 
+          <CardContent className="pt-0">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-sm text-gray-600">
+                <span>{formatFileSize(file.size)}</span>
+                <span>{formatDate(file.uploadedAt)}</span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                {getCategoryBadge(file.category)}
+                <span className="text-xs text-gray-500">
+                  {file.downloads} lượt tải
+                </span>
+              </div>
+
+              <div className="flex space-x-2">
+                <DownloadButton fileId={file.id} fileUrl={file.url} size="sm" className="flex-1">
+                  Tải về
+                </DownloadButton>
+                <Button asChild variant="outline" size="sm">
+                  <Link href={file.url} target="_blank">
+                    <Eye className="h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button type="button" variant="outline" size="sm">
+                  <Share2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+};
+
+export default async function FilesPage() {
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect("/auth/signin");
+  }
+
+  const files = await getFiles();
+  const lectureFiles = files.filter((f) => f.category === "lecture");
+  const videoFiles = files.filter((f) => f.category === "video");
+  const audioFiles = files.filter((f) => f.category === "audio");
+  const assignmentFiles = files.filter((f) => f.category === "assignment");
+  const totalDownloads = files.reduce((sum, file) => sum + (file.downloads ?? 0), 0);
+  const totalSize = files.reduce((sum, file) => sum + (file.size ?? 0), 0);
+
+  const canUpload = user.role === "teacher" || user.role === "admin";
+  const managedClasses = canUpload
+    ? user.role === "teacher"
+      ? await getClassesForUser(user.id, "teacher")
+      : await getClasses()
+    : [];
+
+  return (
+    <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Page Header */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Tài liệu học tập</h2>
           <p className="text-gray-600">Quản lý và truy cập tài liệu từ các lớp học</p>
         </div>
 
-        {/* Search and Filter */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -121,7 +183,6 @@ export default async function FilesPage() {
           </Button>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardContent className="p-6">
@@ -131,7 +192,7 @@ export default async function FilesPage() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Tổng tài liệu</p>
-                  <p className="text-2xl font-bold text-gray-900">{allFiles.length}</p>
+                  <p className="text-2xl font-bold text-gray-900">{files.length}</p>
                 </div>
               </div>
             </CardContent>
@@ -145,9 +206,7 @@ export default async function FilesPage() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Lượt tải</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {allFiles.reduce((sum, file) => sum + file.downloads, 0)}
-                  </p>
+                  <p className="text-2xl font-bold text-gray-900">{totalDownloads}</p>
                 </div>
               </div>
             </CardContent>
@@ -176,7 +235,7 @@ export default async function FilesPage() {
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Dung lượng</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {formatFileSize(allFiles.reduce((sum, file) => sum + file.file_size, 0))}
+                    {formatFileSize(totalSize)}
                   </p>
                 </div>
               </div>
@@ -184,279 +243,38 @@ export default async function FilesPage() {
           </Card>
         </div>
 
-        {/* Files Tabs */}
         <Tabs defaultValue="all" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="all">Tất cả ({allFiles.length})</TabsTrigger>
+            <TabsTrigger value="all">Tất cả ({files.length})</TabsTrigger>
             <TabsTrigger value="lectures">Bài giảng ({lectureFiles.length})</TabsTrigger>
-            <TabsTrigger value="assignments">Bài tập ({assignmentFiles.length})</TabsTrigger>
+            <TabsTrigger value="assignments">
+              Bài tập ({assignmentFiles.length})
+            </TabsTrigger>
             <TabsTrigger value="videos">Video ({videoFiles.length})</TabsTrigger>
             <TabsTrigger value="audio">Audio ({audioFiles.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="all" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {allFiles.map((file) => (
-                <Card key={file.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3">
-                        {getFileIcon(file.file_type)}
-                        <div className="flex-1 min-w-0">
-                          <CardTitle className="text-sm font-medium truncate">{file.original_name}</CardTitle>
-                          <CardDescription className="text-xs">
-                            {file.class_title} • {file.uploader_name}
-                          </CardDescription>
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="sm">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="pt-0">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between text-sm text-gray-600">
-                        <span>{formatFileSize(file.file_size)}</span>
-                        <span>{new Date(file.created_at).toLocaleDateString("vi-VN")}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        {getCategoryBadge(file.category)}
-                        <span className="text-xs text-gray-500">{file.downloads} lượt tải</span>
-                      </div>
-
-                      <div className="flex space-x-2">
-                        <form action={handleDownload.bind(null, file.id)} className="flex-1">
-                          <Button size="sm" className="w-full">
-                            <Download className="h-4 w-4 mr-2" />
-                            Tải về
-                          </Button>
-                        </form>
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Share2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <FilesGrid files={files} />
           </TabsContent>
 
           <TabsContent value="lectures" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {lectureFiles.map((file) => (
-                <Card key={file.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3">
-                        {getFileIcon(file.file_type)}
-                        <div className="flex-1 min-w-0">
-                          <CardTitle className="text-sm font-medium truncate">{file.original_name}</CardTitle>
-                          <CardDescription className="text-xs">
-                            {file.class_title} • {file.uploader_name}
-                          </CardDescription>
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="sm">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="pt-0">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between text-sm text-gray-600">
-                        <span>{formatFileSize(file.file_size)}</span>
-                        <span>{new Date(file.created_at).toLocaleDateString("vi-VN")}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        {getCategoryBadge(file.category)}
-                        <span className="text-xs text-gray-500">{file.downloads} lượt tải</span>
-                      </div>
-
-                      <div className="flex space-x-2">
-                        <Button size="sm" className="flex-1">
-                          <Download className="h-4 w-4 mr-2" />
-                          Tải về
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Share2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <FilesGrid files={lectureFiles} />
           </TabsContent>
 
           <TabsContent value="assignments" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {assignmentFiles.map((file) => (
-                <Card key={file.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3">
-                        {getFileIcon(file.file_type)}
-                        <div className="flex-1 min-w-0">
-                          <CardTitle className="text-sm font-medium truncate">{file.original_name}</CardTitle>
-                          <CardDescription className="text-xs">
-                            {file.class_title} • {file.uploader_name}
-                          </CardDescription>
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="sm">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="pt-0">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between text-sm text-gray-600">
-                        <span>{formatFileSize(file.file_size)}</span>
-                        <span>{new Date(file.created_at).toLocaleDateString("vi-VN")}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        {getCategoryBadge(file.category)}
-                        <span className="text-xs text-gray-500">{file.downloads} lượt tải</span>
-                      </div>
-
-                      <div className="flex space-x-2">
-                        <Button size="sm" className="flex-1">
-                          <Download className="h-4 w-4 mr-2" />
-                          Tải về
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Share2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <FilesGrid files={assignmentFiles} />
           </TabsContent>
 
           <TabsContent value="videos" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {videoFiles.map((file) => (
-                <Card key={file.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3">
-                        {getFileIcon(file.file_type)}
-                        <div className="flex-1 min-w-0">
-                          <CardTitle className="text-sm font-medium truncate">{file.original_name}</CardTitle>
-                          <CardDescription className="text-xs">
-                            {file.class_title} • {file.uploader_name}
-                          </CardDescription>
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="sm">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="pt-0">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between text-sm text-gray-600">
-                        <span>{formatFileSize(file.file_size)}</span>
-                        <span>{new Date(file.created_at).toLocaleDateString("vi-VN")}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        {getCategoryBadge(file.category)}
-                        <span className="text-xs text-gray-500">{file.downloads} lượt tải</span>
-                      </div>
-
-                      <div className="flex space-x-2">
-                        <Button size="sm" className="flex-1">
-                          <Download className="h-4 w-4 mr-2" />
-                          Tải về
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Share2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <FilesGrid files={videoFiles} />
           </TabsContent>
 
           <TabsContent value="audio" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {audioFiles.map((file) => (
-                <Card key={file.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3">
-                        {getFileIcon(file.file_type)}
-                        <div className="flex-1 min-w-0">
-                          <CardTitle className="text-sm font-medium truncate">{file.original_name}</CardTitle>
-                          <CardDescription className="text-xs">
-                            {file.class_title} • {file.uploader_name}
-                          </CardDescription>
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="sm">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="pt-0">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between text-sm text-gray-600">
-                        <span>{formatFileSize(file.file_size)}</span>
-                        <span>{new Date(file.created_at).toLocaleDateString("vi-VN")}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        {getCategoryBadge(file.category)}
-                        <span className="text-xs text-gray-500">{file.downloads} lượt tải</span>
-                      </div>
-
-                      <div className="flex space-x-2">
-                        <Button size="sm" className="flex-1">
-                          <Download className="h-4 w-4 mr-2" />
-                          Tải về
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Share2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <FilesGrid files={audioFiles} />
           </TabsContent>
         </Tabs>
       </div>
     </div>
-  )
+  );
 }

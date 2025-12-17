@@ -1,9 +1,166 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { db, assignments, assignmentSubmissions, users, classes } from "@/db"
-import { eq, and, desc } from "drizzle-orm"
-import { requireAuth } from "@/lib/auth"
+import { writeFile, mkdir, unlink } from "fs/promises"
+import path from "path"
+import { db, assignments, assignmentSubmissions, users, classes, classEnrollments } from "@/db"
+import { eq, and, desc, sql } from "drizzle-orm"
+import { requireAuth, type AuthUser } from "@/lib/auth"
+
+type AssignmentRecord = {
+  id: number
+  title: string
+  description: string | null
+  classId: number
+  className: string | null
+  classDescription: string | null
+  classSchedule: string | null
+  dueDate: Date | null
+  maxScore: number | null
+  createdAt: Date | null
+  updatedAt: Date | null
+  teacherId: number | null
+  teacherName: string | null
+  teacherEmail: string | null
+}
+
+const sanitizeFileName = (input: string) => {
+  return (
+    input
+      .normalize("NFKD")
+      .replace(/[^a-zA-Z0-9._-]+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "")
+      .toLowerCase() || "submission"
+  )
+}
+
+async function fetchAssignmentRecord(id: number): Promise<AssignmentRecord | null> {
+  const [record] = await db
+    .select({
+      id: assignments.id,
+      title: assignments.title,
+      description: assignments.description,
+      classId: assignments.classId,
+      className: classes.name,
+      classDescription: classes.description,
+      classSchedule: classes.schedule,
+      dueDate: assignments.dueDate,
+      maxScore: assignments.maxScore,
+      createdAt: assignments.createdAt,
+      updatedAt: assignments.updatedAt,
+      teacherId: classes.teacherId,
+      teacherName: users.name,
+      teacherEmail: users.email,
+    })
+    .from(assignments)
+    .leftJoin(classes, eq(assignments.classId, classes.id))
+    .leftJoin(users, eq(classes.teacherId, users.id))
+    .where(eq(assignments.id, id))
+    .limit(1)
+
+  return record ?? null
+}
+
+async function isStudentEnrolled(classId: number, studentId: number) {
+  const [enrollment] = await db
+    .select({ id: classEnrollments.id })
+    .from(classEnrollments)
+    .where(and(eq(classEnrollments.classId, classId), eq(classEnrollments.studentId, studentId)))
+    .limit(1)
+
+  return Boolean(enrollment)
+}
+
+async function removeStoredFile(fileUrl?: string | null) {
+  if (!fileUrl || !fileUrl.startsWith("/submissions")) {
+    return
+  }
+
+  try {
+    const absolute = path.join(process.cwd(), "public", fileUrl)
+    await unlink(absolute)
+  } catch (error) {
+    // Ignore missing files
+    console.warn("Could not remove submission file", error)
+  }
+}
+
+async function storeSubmissionFile(file: File, assignmentId: number, studentId: number) {
+  const buffer = Buffer.from(await file.arrayBuffer())
+  const ext = path.extname(file.name) || (file.type ? `.${file.type.split("/").pop()}` : "")
+  const baseName = sanitizeFileName(path.basename(file.name, path.extname(file.name)))
+  const storedName = `${Date.now()}-${baseName}${ext}`
+  const baseDir = path.join(process.cwd(), "public", "submissions", `${assignmentId}`, `${studentId}`)
+  await mkdir(baseDir, { recursive: true })
+  await writeFile(path.join(baseDir, storedName), buffer)
+  return `/submissions/${assignmentId}/${studentId}/${storedName}`
+}
+
+async function submitAssignmentInternal(
+  user: AuthUser,
+  assignmentId: number,
+  content: string,
+  fileUrl?: string | null,
+) {
+  if (user.role !== "student") {
+    return { success: false, error: "Chỉ học viên mới có thể nộp bài tập" }
+  }
+
+  const assignment = await fetchAssignmentRecord(assignmentId)
+  if (!assignment) {
+    return { success: false, error: "Không tìm thấy bài tập" }
+  }
+
+  const enrolled = await isStudentEnrolled(assignment.classId, user.id)
+  if (!enrolled) {
+    return { success: false, error: "Bạn không thuộc lớp học này" }
+  }
+
+  const safeContent = (content ?? "").trim()
+  if (!safeContent && !fileUrl) {
+    return { success: false, error: "Vui lòng nhập nội dung hoặc đính kèm tệp" }
+  }
+
+  const [existing] = await db
+    .select({ id: assignmentSubmissions.id, fileUrl: assignmentSubmissions.fileUrl })
+    .from(assignmentSubmissions)
+    .where(and(eq(assignmentSubmissions.assignmentId, assignmentId), eq(assignmentSubmissions.studentId, user.id)))
+    .limit(1)
+
+  const now = new Date()
+  const nextFileUrl = fileUrl ?? existing?.fileUrl ?? null
+
+  if (existing) {
+    if (fileUrl && existing.fileUrl && existing.fileUrl !== fileUrl) {
+      await removeStoredFile(existing.fileUrl)
+    }
+
+    await db
+      .update(assignmentSubmissions)
+      .set({
+        content: safeContent,
+        fileUrl: nextFileUrl,
+        submittedAt: now,
+        status: "submitted",
+      })
+      .where(eq(assignmentSubmissions.id, existing.id))
+  } else {
+    await db.insert(assignmentSubmissions).values({
+      assignmentId,
+      studentId: user.id,
+      content: safeContent,
+      fileUrl: nextFileUrl,
+      submittedAt: now,
+      status: "submitted",
+    })
+  }
+
+  revalidatePath("/assignments")
+  revalidatePath(`/assignments/${assignmentId}`)
+  revalidatePath(`/classes/${assignment.classId}`)
+  return { success: true }
+}
 
 export interface CreateAssignmentData {
   title: string
@@ -16,24 +173,38 @@ export interface CreateAssignmentData {
 export async function getAssignments(classId?: number) {
   try {
     const user = await requireAuth()
-    
-    const query = db
-      .select({
-        id: assignments.id,
-        title: assignments.title,
-        description: assignments.description,
-        classId: assignments.classId,
-        className: classes.name,
-        dueDate: assignments.dueDate,
-        maxScore: assignments.maxScore,
-        createdAt: assignments.createdAt,
-      })
+
+    const fields = {
+      id: assignments.id,
+      title: assignments.title,
+      description: assignments.description,
+      classId: assignments.classId,
+      className: classes.name,
+      dueDate: assignments.dueDate,
+      maxScore: assignments.maxScore,
+      createdAt: assignments.createdAt,
+    }
+
+    if (!classId && user.role === "student") {
+      return await db
+        .select(fields)
+        .from(assignments)
+        .innerJoin(classEnrollments, eq(classEnrollments.classId, assignments.classId))
+        .innerJoin(classes, eq(assignments.classId, classes.id))
+        .where(eq(classEnrollments.studentId, user.id))
+        .orderBy(desc(assignments.createdAt))
+    }
+
+    let query = db
+      .select(fields)
       .from(assignments)
-      .leftJoin(classes, eq(assignments.classId, classes.id))
+      .innerJoin(classes, eq(assignments.classId, classes.id))
       .orderBy(desc(assignments.createdAt))
 
     if (classId) {
-      return await query.where(eq(assignments.classId, classId))
+      query = query.where(eq(assignments.classId, classId))
+    } else if (user.role === "teacher") {
+      query = query.where(eq(classes.teacherId, user.id))
     }
 
     return await query
@@ -45,25 +216,151 @@ export async function getAssignments(classId?: number) {
 
 export async function getAssignmentById(id: number) {
   try {
-    const [assignment] = await db
-      .select({
-        id: assignments.id,
-        title: assignments.title,
-        description: assignments.description,
-        classId: assignments.classId,
-        className: classes.name,
-        dueDate: assignments.dueDate,
-        maxScore: assignments.maxScore,
-        createdAt: assignments.createdAt,
-      })
-      .from(assignments)
-      .leftJoin(classes, eq(assignments.classId, classes.id))
-      .where(eq(assignments.id, id))
-      .limit(1)
+    const assignment = await fetchAssignmentRecord(id)
+    if (!assignment) {
+      return null
+    }
 
-    return assignment || null
+    const { classDescription, classSchedule, teacherId, teacherName, teacherEmail, ...rest } = assignment
+
+    return {
+      ...rest,
+      classDescription,
+      classSchedule,
+      teacher: teacherId
+        ? {
+            id: teacherId,
+            name: teacherName,
+            email: teacherEmail,
+          }
+        : null,
+    }
   } catch (error) {
     console.error("Error fetching assignment:", error)
+    return null
+  }
+}
+
+export async function getAssignmentDetail(id: number) {
+  try {
+    const user = await requireAuth()
+    const assignment = await fetchAssignmentRecord(id)
+
+    if (!assignment) {
+      return null
+    }
+
+    if (user.role === "student") {
+      const enrolled = await isStudentEnrolled(assignment.classId, user.id)
+      if (!enrolled) {
+        return null
+      }
+    } else if (user.role === "teacher" && assignment.teacherId !== user.id) {
+      return null
+    }
+
+    const statsRows = await db
+      .select({
+        status: assignmentSubmissions.status,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(assignmentSubmissions)
+      .where(eq(assignmentSubmissions.assignmentId, id))
+      .groupBy(assignmentSubmissions.status)
+
+    const stats = {
+      totalSubmissions: 0,
+      gradedSubmissions: 0,
+      pendingSubmissions: 0,
+    }
+
+    for (const row of statsRows) {
+      stats.totalSubmissions += row.count
+      if (row.status === "graded") {
+        stats.gradedSubmissions += row.count
+      } else {
+        stats.pendingSubmissions += row.count
+      }
+    }
+
+    let mySubmission: null | {
+      id: number
+      status: string
+      score: number | null
+      feedback: string | null
+      content: string | null
+      fileUrl: string | null
+      submittedAt: Date | null
+      gradedAt: Date | null
+    } = null
+
+    if (user.role === "student") {
+      const [submission] = await db
+        .select({
+          id: assignmentSubmissions.id,
+          status: assignmentSubmissions.status,
+          score: assignmentSubmissions.score,
+          feedback: assignmentSubmissions.feedback,
+          content: assignmentSubmissions.content,
+          fileUrl: assignmentSubmissions.fileUrl,
+          submittedAt: assignmentSubmissions.submittedAt,
+          gradedAt: assignmentSubmissions.gradedAt,
+        })
+        .from(assignmentSubmissions)
+        .where(
+          and(
+            eq(assignmentSubmissions.assignmentId, id),
+            eq(assignmentSubmissions.studentId, user.id),
+          ),
+        )
+        .limit(1)
+
+      mySubmission = submission ?? null
+    }
+
+    let submissions: Array<{
+      id: number
+      studentId: number
+      studentName: string | null
+      studentEmail: string | null
+      content: string | null
+      fileUrl: string | null
+      status: string
+      score: number | null
+      feedback: string | null
+      submittedAt: Date | null
+      gradedAt: Date | null
+    }> = []
+
+    if (user.role === "teacher" || user.role === "admin") {
+      submissions = await db
+        .select({
+          id: assignmentSubmissions.id,
+          studentId: assignmentSubmissions.studentId,
+          studentName: users.name,
+          studentEmail: users.email,
+          content: assignmentSubmissions.content,
+          fileUrl: assignmentSubmissions.fileUrl,
+          status: assignmentSubmissions.status,
+          score: assignmentSubmissions.score,
+          feedback: assignmentSubmissions.feedback,
+          submittedAt: assignmentSubmissions.submittedAt,
+          gradedAt: assignmentSubmissions.gradedAt,
+        })
+        .from(assignmentSubmissions)
+        .innerJoin(users, eq(assignmentSubmissions.studentId, users.id))
+        .where(eq(assignmentSubmissions.assignmentId, id))
+        .orderBy(desc(assignmentSubmissions.submittedAt))
+    }
+
+    return {
+      ...assignment,
+      stats,
+      mySubmission,
+      submissions: user.role === "teacher" || user.role === "admin" ? submissions : undefined,
+    }
+  } catch (error) {
+    console.error("Error fetching assignment detail:", error)
     return null
   }
 }
@@ -107,54 +404,36 @@ export async function createAssignment(data: CreateAssignmentData) {
   }
 }
 
-export async function submitAssignment(assignmentId: number, content: string, fileUrl?: string) {
+export async function submitAssignment(assignmentId: number, content: string, fileUrl?: string | null) {
   try {
     const user = await requireAuth()
-
-    if (user.role !== 'student') {
-      return { success: false, error: "Chỉ học viên mới có thể nộp bài tập" }
-    }
-
-    // Check if already submitted
-    const [existing] = await db
-      .select()
-      .from(assignmentSubmissions)
-      .where(and(
-        eq(assignmentSubmissions.assignmentId, assignmentId),
-        eq(assignmentSubmissions.studentId, user.id)
-      ))
-      .limit(1)
-
-    if (existing) {
-      // Update existing submission
-      await db
-        .update(assignmentSubmissions)
-        .set({
-          content,
-          fileUrl,
-          submittedAt: new Date(),
-          status: 'submitted',
-        })
-        .where(eq(assignmentSubmissions.id, existing.id))
-    } else {
-      // Create new submission
-      await db
-        .insert(assignmentSubmissions)
-        .values({
-          assignmentId,
-          studentId: user.id,
-          content,
-          fileUrl,
-          submittedAt: new Date(),
-          status: 'submitted',
-        })
-    }
-
-    revalidatePath("/assignments")
-    revalidatePath(`/assignments/${assignmentId}`)
-    return { success: true }
+    return await submitAssignmentInternal(user, assignmentId, content, fileUrl)
   } catch (error) {
     console.error("Error submitting assignment:", error)
+    return { success: false, error: "Không thể nộp bài tập" }
+  }
+}
+
+export async function submitAssignmentWithUpload(formData: FormData) {
+  try {
+    const user = await requireAuth()
+    const assignmentId = Number(formData.get("assignmentId"))
+
+    if (!assignmentId || Number.isNaN(assignmentId)) {
+      return { success: false, error: "Bài tập không hợp lệ" }
+    }
+
+    const content = (formData.get("content") as string | null) ?? ""
+    const file = formData.get("file") as File | null
+    let storedFileUrl: string | null | undefined = undefined
+
+    if (file && file.size > 0) {
+      storedFileUrl = await storeSubmissionFile(file, assignmentId, user.id)
+    }
+
+    return await submitAssignmentInternal(user, assignmentId, content, storedFileUrl ?? null)
+  } catch (error) {
+    console.error("Error submitting assignment with upload:", error)
     return { success: false, error: "Không thể nộp bài tập" }
   }
 }

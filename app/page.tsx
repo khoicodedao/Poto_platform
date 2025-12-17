@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -6,432 +8,353 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
-  Calendar,
-  Users,
-  BookOpen,
-  Video,
-  MessageCircle,
-  FileText,
   Award,
+  Calendar,
+  FileText,
+  MessageCircle,
+  Users,
+  Video,
   Clock,
 } from "lucide-react";
-import Link from "next/link";
-import { getClasses } from "@/lib/actions/classes";
+import { getClassesForUser } from "@/lib/actions/classes";
 import { getAssignments } from "@/lib/actions/assignments";
 import { getFiles } from "@/lib/actions/files";
 import { getCurrentSession } from "@/lib/auth";
-import { redirect } from "next/navigation";
-import UserMenu from "@/components/user-menu";
-import { User } from "lucide-react"; // Import User icon
+
+const quickActions = [
+  {
+    href: "/classes",
+    label: "Lớp học",
+    description: "Truy cập lớp trực tuyến",
+    icon: Video,
+    color: "text-blue-600",
+    bg: "bg-blue-50",
+  },
+  {
+    href: "/assignments",
+    label: "Bài tập",
+    description: "Theo dõi bài tập & điểm số",
+    icon: Award,
+    color: "text-orange-600",
+    bg: "bg-orange-50",
+  },
+  {
+    href: "/files",
+    label: "Tài liệu",
+    description: "Kho tài liệu của lớp",
+    icon: FileText,
+    color: "text-green-600",
+    bg: "bg-green-50",
+  },
+  {
+    href: "/classes/create",
+    label: "Tạo lớp",
+    description: "Dành cho giáo viên",
+    icon: Calendar,
+    color: "text-purple-600",
+    bg: "bg-purple-50",
+    teacherOnly: true,
+  },
+];
 
 export default async function Dashboard() {
   const session = await getCurrentSession();
-  // Thêm debug log
-  console.log("Current session:", session);
-
   if (!session) {
-    console.log("No session found, redirecting to signin");
     redirect("/auth/signin");
   }
 
   const { user } = session;
 
-  console.log("User authenticated:", user);
-
   const [classes, assignments, files] = await Promise.all([
-    getClasses(),
-    getAssignments(user.role === "student" ? user.id : undefined),
+    getClassesForUser(user.id, user.role as any),
+    getAssignments(),
     getFiles(),
   ]);
 
-  const upcomingClasses = classes
-    .filter((c) => c.status === "active")
-    .slice(0, 3);
-  const pendingAssignments =
-    user.role === "student"
-      ? assignments.filter((a) => !a.submitted).slice(0, 3)
-      : [];
-  const recentFiles = files.slice(0, 4);
+  const featuredClasses = classes.slice(0, 3);
+  const featuredAssignments = assignments.slice(0, 3);
+  const recentFiles = files.slice(0, 5);
 
-  const recentActivities = [
+  const heroStats = [
     {
-      type: "assignment",
-      title: "Bài tập Toán học đã được chấm",
+      label: user.role === "teacher" ? "Lớp phụ trách" : "Lớp tham gia",
+      value: classes.length,
+    },
+    {
+      label: "Bài tập",
+      value: assignments.length,
+    },
+    {
+      label: "Tài liệu",
+      value: files.length,
+    },
+  ];
+
+  const activities = [
+    {
+      icon: MessageCircle,
+      color: "text-blue-500",
+      title: "Tin nhắn mới trong lớp học",
+      time: "Vừa cập nhật",
+    },
+    {
+      icon: FileText,
+      color: "text-green-600",
+      title: "Tài liệu mới đã được chia sẻ",
+      time: "1 giờ trước",
+    },
+    {
+      icon: Award,
+      color: "text-orange-500",
+      title: "Bài tập mới vừa được giao",
       time: "2 giờ trước",
-    },
-    { type: "message", title: "Tin nhắn mới từ Thầy Nam", time: "3 giờ trước" },
-    {
-      type: "file",
-      title: "Tài liệu mới: Ngữ pháp tiếng Anh",
-      time: "5 giờ trước",
-    },
-    {
-      type: "recording",
-      title: "Bản ghi buổi học Vật lý đã sẵn sàng",
-      time: "1 ngày trước",
     },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <BookOpen className="h-8 w-8 text-blue-600" />
-                <h1 className="text-xl font-bold text-gray-900">EduPlatform</h1>
+    <div className="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
+      <section className="mt-2 rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 text-white shadow-xl">
+        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-sm uppercase tracking-widest text-white/70">
+              Xin chào
+            </p>
+            <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">
+              {user.name}
+            </h1>
+            <p className="mt-3 max-w-2xl text-white/80">
+              {user.role === "teacher"
+                ? "Quản lý lớp học, giao bài và đồng hành cùng học viên."
+                : "Theo dõi lộ trình học tập và hoàn thành nhiệm vụ mỗi ngày."}
+            </p>
+          </div>
+          <div className="grid w-full grid-cols-3 gap-4 md:w-auto">
+            {heroStats.map((stat) => (
+              <div
+                key={stat.label}
+                className="rounded-2xl border border-white/30 bg-white/10 p-4 text-center backdrop-blur"
+              >
+                <p className="text-2xl font-semibold">{stat.value}</p>
+                <p className="text-xs text-white/70">{stat.label}</p>
               </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" size="sm">
-                <MessageCircle className="h-4 w-4 mr-2" />
-                Tin nhắn
-              </Button>
-              <UserMenu user={user} />
-            </div>
+            ))}
           </div>
         </div>
-      </header>
+      </section>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Chào mừng trở lại, {user.name}!
-          </h2>
-          <p className="text-gray-600">
-            {user.role === "student"
-              ? `Hôm nay bạn có ${upcomingClasses.length} lớp học và ${pendingAssignments.length} bài tập cần hoàn thành`
-              : `Bạn đang quản lý ${classes.length} lớp học`}
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Thao tác nhanh</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <Link href="/classes">
-                    <Button
-                      variant="outline"
-                      className="h-20 flex-col space-y-2"
-                    >
-                      <Video className="h-6 w-6" />
-                      <span className="text-sm">
-                        {user.role === "teacher"
-                          ? "Quản lý lớp"
-                          : "Tham gia lớp"}
-                      </span>
-                    </Button>
-                  </Link>
-                  {user.role === "teacher" && (
-                    <Link href="/classes/create">
-                      <Button
-                        variant="outline"
-                        className="h-20 flex-col space-y-2"
-                      >
-                        <Calendar className="h-6 w-6" />
-                        <span className="text-sm">Tạo lớp học</span>
-                      </Button>
-                    </Link>
-                  )}
-                  <Link href="/files">
-                    <Button
-                      variant="outline"
-                      className="h-20 flex-col space-y-2"
-                    >
-                      <FileText className="h-6 w-6" />
-                      <span className="text-sm">Tài liệu</span>
-                    </Button>
-                  </Link>
-                  <Link href="/assignments">
-                    <Button
-                      variant="outline"
-                      className="h-20 flex-col space-y-2"
-                    >
-                      <Award className="h-6 w-6" />
-                      <span className="text-sm">Bài tập</span>
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Upcoming Classes */}
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  {user.role === "teacher"
-                    ? "Lớp học của bạn"
-                    : "Lớp học sắp tới"}
-                </CardTitle>
-                <CardDescription>
-                  {user.role === "teacher"
-                    ? "Các lớp học bạn đang giảng dạy"
-                    : "Các buổi học đang hoạt động"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {upcomingClasses.map((class_) => (
-                    <div
-                      key={class_.id}
-                      className="flex items-center justify-between p-4 border rounded-lg"
-                    >
-                      <div className="flex items-center space-x-4">
-                        <div className="flex-shrink-0">
-                          <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <BookOpen className="h-6 w-6 text-blue-600" />
-                          </div>
-                        </div>
-                        <div>
-                          <h3 className="font-medium text-gray-900">
-                            {class_.title}
-                          </h3>
-                          <p className="text-sm text-gray-500">
-                            {class_.teacher_name}
-                          </p>
-                          <div className="flex items-center space-x-4 mt-1">
-                            <span className="text-sm text-gray-500 flex items-center">
-                              <Clock className="h-4 w-4 mr-1" />
-                              {class_.schedule}
-                            </span>
-                            <span className="text-sm text-gray-500 flex items-center">
-                              <Users className="h-4 w-4 mr-1" />
-                              {class_.student_count} học viên
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <Badge
-                          variant={
-                            class_.status === "active" ? "default" : "secondary"
-                          }
-                        >
-                          {class_.status === "active"
-                            ? "Đang hoạt động"
-                            : "Đang tuyển sinh"}
-                        </Badge>
-                        <Link href={`/classroom/${class_.id}`}>
-                          <Button size="sm">
-                            {user.role === "teacher" ? "Vào lớp" : "Tham gia"}
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Pending Assignments - Only for students */}
-            {user.role === "student" && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Bài tập cần hoàn thành</CardTitle>
-                  <CardDescription>Các bài tập chưa nộp</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {pendingAssignments.map((assignment) => (
-                      <div
-                        key={assignment.id}
-                        className="flex items-center justify-between p-4 border rounded-lg"
-                      >
-                        <div className="flex items-center space-x-4">
-                          <div className="flex-shrink-0">
-                            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                              <Award className="h-6 w-6 text-orange-600" />
-                            </div>
-                          </div>
-                          <div>
-                            <h3 className="font-medium text-gray-900">
-                              {assignment.title}
-                            </h3>
-                            <p className="text-sm text-gray-500">
-                              {assignment.class_title}
-                            </p>
-                            <div className="flex items-center space-x-4 mt-1">
-                              <span className="text-sm text-gray-500 flex items-center">
-                                <Clock className="h-4 w-4 mr-1" />
-                                Hạn:{" "}
-                                {new Date(
-                                  assignment.due_date
-                                ).toLocaleDateString("vi-VN")}
-                              </span>
-                              <span className="text-sm text-gray-500">
-                                {assignment.points} điểm
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                          <Badge variant="outline">Chưa nộp</Badge>
-                          <Link href={`/assignments/${assignment.id}/submit`}>
-                            <Button size="sm">Làm bài</Button>
-                          </Link>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Stats */}
-            <div className="grid grid-cols-2 gap-4">
-              <Card>
-                <CardContent className="p-4">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {classes.length}
-                  </div>
-                  <div className="text-sm text-gray-500">Lớp học</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="text-2xl font-bold text-green-600">
-                    {user.role === "student"
-                      ? assignments.filter((a) => a.submitted).length
-                      : assignments.length}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {user.role === "student" ? "Hoàn thành" : "Bài tập"}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* User Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Thông tin tài khoản</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <User className="h-6 w-6 text-blue-600" />
+      <section className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {quickActions
+          .filter((action) => (action.teacherOnly ? user.role === "teacher" : true))
+          .map((action) => {
+            const Icon = action.icon;
+            return (
+              <Link key={action.href} href={action.href}>
+                <Card className="transition hover:-translate-y-1 hover:shadow-lg">
+                  <CardContent className="flex items-center gap-4 p-5">
+                    <div className={`rounded-2xl ${action.bg} p-3`}>
+                      <Icon className={`h-6 w-6 ${action.color}`} />
                     </div>
                     <div>
-                      <p className="font-medium">{user.name}</p>
-                      <p className="text-sm text-gray-500">{user.email}</p>
-                      <Badge
-                        variant={
-                          user.role === "teacher" ? "default" : "secondary"
-                        }
-                        className="mt-1"
-                      >
-                        {user.role === "teacher" ? "Giáo viên" : "Học viên"}
-                      </Badge>
+                      <p className="font-semibold text-gray-900">
+                        {action.label}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {action.description}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
+      </section>
+
+      <section className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                {user.role === "teacher"
+                  ? "Lớp học đang giảng dạy"
+                  : "Lớp học của bạn"}
+              </CardTitle>
+              <CardDescription>
+                Tóm tắt các lớp trực tuyến hoạt động gần đây
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {featuredClasses.length === 0 ? (
+                <div className="rounded-2xl border border-dashed p-6 text-center text-gray-500">
+                  Bạn chưa tham gia lớp học nào.
+                </div>
+              ) : (
+                featuredClasses.map((classItem) => (
+                  <div
+                    key={classItem.id}
+                    className="flex items-center justify-between rounded-2xl border p-4 shadow-sm"
+                  >
+                    <div>
+                      <p className="text-lg font-semibold text-gray-900">
+                        {classItem.title}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        Giảng viên: {classItem.teacher_name}
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-4 w-4" />
+                          {classItem.schedule ?? "Chưa cập nhật"}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Users className="h-4 w-4" />
+                          {classItem.student_count ?? 0} học viên
+                        </span>
+                      </div>
+                    </div>
+                    <Link href={`/classroom/${classItem.id}`}>
+                      <Button size="sm" variant="outline">
+                        Vào lớp
+                      </Button>
+                    </Link>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Bài tập nổi bật</CardTitle>
+              <CardDescription>
+                {user.role === "teacher"
+                  ? "Những bài tập bạn vừa giao gần đây"
+                  : "Những bài tập bạn cần chú ý"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {featuredAssignments.length === 0 ? (
+                <div className="rounded-2xl border border-dashed p-6 text-center text-gray-500">
+                  Chưa có bài tập nào.
+                </div>
+              ) : (
+                featuredAssignments.map((assignment) => (
+                  <div
+                    key={assignment.id}
+                    className="flex items-center justify-between rounded-2xl border p-4 shadow-sm"
+                  >
+                    <div>
+                      <p className="font-semibold text-gray-900">
+                        {assignment.title}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {assignment.className ?? "Lớp học"}
+                      </p>
+                      <div className="mt-2 flex items-center gap-3 text-sm text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          {assignment.dueDate
+                            ? new Date(assignment.dueDate).toLocaleDateString(
+                                "vi-VN"
+                              )
+                            : "Không hạn"}
+                        </span>
+                        <span>{assignment.maxScore ?? 100} điểm</span>
+                      </div>
+                    </div>
+                    <Link href={`/assignments/${assignment.id}`}>
+                      <Button size="sm" variant="ghost">
+                        Chi tiết
+                      </Button>
+                    </Link>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Hoạt động gần đây</CardTitle>
+              <CardDescription>Cập nhật từ hệ thống</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {activities.map((activity, idx) => {
+                const Icon = activity.icon;
+                return (
+                  <div key={idx} className="flex items-start gap-3">
+                    <div className="rounded-full bg-gray-100 p-2">
+                      <Icon className={`h-4 w-4 ${activity.color}`} />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-900">
+                        {activity.title}
+                      </p>
+                      <p className="text-xs text-gray-500">{activity.time}</p>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                );
+              })}
+            </CardContent>
+          </Card>
 
-            {/* Recent Activities */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Hoạt động gần đây</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {recentActivities.map((activity, index) => (
-                    <div key={index} className="flex items-start space-x-3">
-                      <div className="flex-shrink-0 mt-1">
-                        {activity.type === "assignment" && (
-                          <Award className="h-4 w-4 text-orange-500" />
-                        )}
-                        {activity.type === "message" && (
-                          <MessageCircle className="h-4 w-4 text-blue-500" />
-                        )}
-                        {activity.type === "file" && (
-                          <FileText className="h-4 w-4 text-green-500" />
-                        )}
-                        {activity.type === "recording" && (
-                          <Video className="h-4 w-4 text-purple-500" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-gray-900">
-                          {activity.title}
-                        </p>
-                        <p className="text-xs text-gray-500">{activity.time}</p>
-                      </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Tài liệu mới chia sẻ</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {recentFiles.length === 0 ? (
+                <p className="text-sm text-gray-500">
+                  Chưa có tài liệu nào được tải lên.
+                </p>
+              ) : (
+                recentFiles.map((file) => (
+                  <div
+                    key={file.id}
+                    className="flex items-center justify-between rounded-2xl border p-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-gray-900">
+                        {file.name}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {file.classTitle ?? "Tài liệu chung"}
+                      </p>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    <Link href={file.url} target="_blank">
+                      <Button size="sm" variant="outline">
+                        Xem
+                      </Button>
+                    </Link>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
 
-            {/* Recent Files */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Tài liệu mới</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {recentFiles.map((file) => (
-                    <div key={file.id} className="flex items-center space-x-3">
-                      <FileText className="h-4 w-4 text-gray-400" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-gray-900 truncate">
-                          {file.original_name}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {file.class_title}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Quick Links */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Liên kết nhanh</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <Link
-                    href="/help"
-                    className="block text-sm text-blue-600 hover:underline"
-                  >
-                    Trung tâm trợ giúp
-                  </Link>
-                  <Link
-                    href="/settings"
-                    className="block text-sm text-blue-600 hover:underline"
-                  >
-                    Cài đặt tài khoản
-                  </Link>
-                  <Link
-                    href="/feedback"
-                    className="block text-sm text-blue-600 hover:underline"
-                  >
-                    Gửi phản hồi
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Liên kết nhanh</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <Link href="/help" className="text-blue-600 hover:underline">
+                Trung tâm trợ giúp
+              </Link>
+              <Link href="/settings" className="text-blue-600 hover:underline">
+                Cài đặt tài khoản
+              </Link>
+              <Link
+                href="/feedback"
+                className="text-blue-600 hover:underline"
+              >
+                Gửi phản hồi
+              </Link>
+            </CardContent>
+          </Card>
         </div>
-      </div>
+      </section>
     </div>
   );
 }
