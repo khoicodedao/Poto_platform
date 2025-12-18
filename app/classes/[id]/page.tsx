@@ -4,6 +4,7 @@ import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { getClassDetail } from "@/lib/actions/classes";
 import { getCurrentUser } from "@/lib/auth";
+import { ClassNavTabs } from "@/components/class-nav-tabs";
 import { CreateAssignmentForm } from "@/components/assignments/create-assignment-form";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,11 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import {
   BookOpen,
@@ -166,6 +163,7 @@ export default async function ClassDetailPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <ClassNavTabs />
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
         <nav className="text-sm text-gray-500" aria-label="Breadcrumb">
           <ol className="flex items-center space-x-2">
@@ -339,7 +337,8 @@ export default async function ClassDetailPage({ params }: PageProps) {
                 </div>
               </div>
               <p className="mt-3 text-sm text-gray-500">
-                Cập nhật gần nhất {formatRelativeTime(detail.files[0]?.uploadedAt)}
+                Cập nhật gần nhất{" "}
+                {formatRelativeTime(detail.files[0]?.uploadedAt)}
               </p>
             </CardContent>
           </Card>
@@ -433,42 +432,42 @@ export default async function ClassDetailPage({ params }: PageProps) {
                         key={activity.id}
                         className="flex items-center justify-between rounded-2xl border p-4"
                       >
-                      <div className="flex items-center gap-3">
-                        <div className="rounded-full bg-gray-100 p-2">
-                          {activity.type === "assignment" ? (
-                            <Award className="h-5 w-5 text-orange-500" />
-                          ) : (
-                            <UserPlus className="h-5 w-5 text-blue-500" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">
-                            {activity.title}
-                          </p>
-                          {activity.description && (
-                            <p className="text-sm text-gray-500">
-                              {activity.description}
+                        <div className="flex items-center gap-3">
+                          <div className="rounded-full bg-gray-100 p-2">
+                            {activity.type === "assignment" ? (
+                              <Award className="h-5 w-5 text-orange-500" />
+                            ) : (
+                              <UserPlus className="h-5 w-5 text-blue-500" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {activity.title}
                             </p>
-                          )}
+                            {activity.description && (
+                              <p className="text-sm text-gray-500">
+                                {activity.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <p className="text-xs text-gray-400">
+                            {formatDateTime(activity.createdAt)}
+                          </p>
+                          {activity.type === "assignment" &&
+                            activity.assignmentId && (
+                              <Link
+                                href={`/assignments/${activity.assignmentId}`}
+                                className="text-sm text-blue-600 hover:underline"
+                              >
+                                Xem bài
+                              </Link>
+                            )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <p className="text-xs text-gray-400">
-                          {formatDateTime(activity.createdAt)}
-                        </p>
-                        {activity.type === "assignment" &&
-                          activity.assignmentId && (
-                            <Link
-                              href={`/assignments/${activity.assignmentId}`}
-                              className="text-sm text-blue-600 hover:underline"
-                            >
-                              Xem bài
-                            </Link>
-                          )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
                 )}
               </CardContent>
             </Card>

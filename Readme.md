@@ -25,8 +25,13 @@ This repository contains an online learning platform with a Next.js frontend (Ap
 ## Environment variables
 
 - `DATABASE_URL` - PostgreSQL connection string used by Drizzle.
+- `LIVEKIT_URL` - WebSocket URL to LiveKit server (e.g. `ws://localhost:7880` for self-hosted or cloud URL)
+- `LIVEKIT_API_KEY` - LiveKit API key for token generation
+- `LIVEKIT_API_SECRET` - LiveKit API secret for token generation
 - `NEXT_PUBLIC_...` - any public client env variables for Next.js.
-- LiveKit / real-time keys if using a hosted LiveKit instance (e.g. `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`).
+- `NEXT_PUBLIC_SIGNALING_SERVER` - (optional) custom WebRTC signaling server URL
+
+See `.env.example` for a template.
 
 ## Cấu trúc dự án
 
@@ -109,6 +114,85 @@ This repository contains an online learning platform with a Next.js frontend (Ap
 
 - To run the full stack locally you need a PostgreSQL instance and set `DATABASE_URL` accordingly.
 - If you want, I can add sample `.env.example`, migration/run scripts, or a simple architecture diagram (ASCII or image) showing the flow from browser → API → DB → LiveKit.
+
+## Troubleshooting LiveKit
+
+**Error: "could not establish pc connection"**
+
+- This means the peer connection (WebRTC) failed. Usually caused by:
+  1. LiveKit server not reachable/not running
+  2. Wrong LIVEKIT_URL format or protocol
+  3. Firewall/network blocking UDP ports (7882)
+  4. Multiple connection attempts with invalid tokens
+
+**Error: "Received leave request while trying to (re)connect"**
+
+- Server is rejecting the connection mid-setup. Check:
+  1. Token is valid (not expired)
+  2. Room credentials are correct in API endpoint
+  3. LiveKit server has the participant registered
+
+**Steps to debug:**
+
+1. **Verify LiveKit server is running:**
+
+   ```bash
+   # Start self-hosted LiveKit with Docker
+   docker run --rm --name livekit -p 7880:7880 -p 7881:7881/tcp -p 7882:7882/udp \
+     livekit/livekit-server --dev --bind 0.0.0.0
+
+   # Check if it's accessible
+   curl -v ws://localhost:7880
+   ```
+
+2. **Check environment variables:**
+
+   ```bash
+   # Create .env.local with:
+   LIVEKIT_URL=ws://localhost:7880
+   LIVEKIT_API_KEY=devkey
+   LIVEKIT_API_SECRET=secret
+   DATABASE_URL=postgresql://...
+   ```
+
+3. **Test token endpoint:**
+
+   ```bash
+   # Call the token generator API
+   curl -X POST http://localhost:5001/api/livekit-token \
+     -H "Content-Type: application/json" \
+     -d '{
+       "roomName": "test-room",
+       "userId": "user-123",
+       "userName": "Test User"
+     }' | jq .
+
+   # Expected response:
+   # {
+   #   "token": "eyJ0eXAi...",
+   #   "url": "ws://localhost:7880"
+   # }
+   ```
+
+4. **Check browser console for detailed errors:**
+
+   - Open DevTools (F12)
+   - Go to Console tab
+   - Look for `[LiveKit]` prefixed logs
+   - Check Network tab for `/api/livekit-token` request
+
+5. **Common issues:**
+
+   - ❌ `LIVEKIT_URL` is `undefined` → Set in `.env.local`
+   - ❌ `Token generation failed` → Check `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`
+   - ❌ `WebSocket connection failed` → LiveKit server not running or wrong port
+   - ❌ `PC connection timeout` → Firewall blocking UDP 7882, or network latency
+   - ✅ `Room connected successfully` → All good!
+
+6. **Run the test script (Linux/Mac):**
+   ```bash
+   bash scripts/test-livekit.sh
+   ```
 
 ---
 

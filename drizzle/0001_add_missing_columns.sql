@@ -1,0 +1,1 @@
+ALTER TABLE "files" ADD COLUMN "download_count" integer DEFAULT 0 NOT NULL;
