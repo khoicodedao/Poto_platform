@@ -9,6 +9,25 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import Link from "next/link";
+import { Edit, Trash } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
+import { AssignmentScheduleForm } from "@/components/assignment-schedule-form";
 
 interface Assignment {
   id: number;
@@ -36,28 +55,69 @@ export function AssignmentList({
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchAssignments = async () => {
-      try {
-        const response = await fetch(`/api/assignments?classId=${classId}`);
-        if (!response.ok) throw new Error("Failed to fetch assignments");
-        const result = await response.json();
-        const assignmentsData = result.data || result.assignments || result;
-        setAssignments(Array.isArray(assignmentsData) ? assignmentsData : []);
-      } catch (error) {
-        toast({
-          title: "Error",
-          description:
-            error instanceof Error ? error.message : "Failed to fetch",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(
+    null
+  );
 
+  const [deleteTarget, setDeleteTarget] = useState<Assignment | null>(null);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
+  useEffect(() => {
     fetchAssignments();
   }, [classId, toast]);
+
+  async function fetchAssignments() {
+    try {
+      const response = await fetch(`/api/assignments?classId=${classId}`);
+      if (!response.ok) throw new Error("Failed to fetch assignments");
+      const result = await response.json();
+      const assignmentsData = result.data || result.assignments || result;
+      setAssignments(Array.isArray(assignmentsData) ? assignmentsData : []);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to fetch",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function openEdit(assignment: Assignment) {
+    setEditingAssignment(assignment);
+    setIsDialogOpen(true);
+  }
+
+  function openDeleteFn(assignment: Assignment) {
+    setDeleteTarget(assignment);
+    setIsDeleteOpen(true);
+  }
+
+  async function doDelete() {
+    if (!deleteTarget) return;
+    try {
+      const res = await fetch(`/api/assignments/${deleteTarget.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Delete failed");
+      setIsDeleteOpen(false);
+      setDeleteTarget(null);
+      await fetchAssignments();
+      toast({
+        title: "Thành công",
+        description: "Xóa bài tập thành công",
+      });
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description:
+          error instanceof Error ? error.message : "Xóa bài tập thất bại",
+        variant: "destructive",
+      });
+    }
+  }
 
   const getStatusBadge = (assignment: Assignment) => {
     if (!assignment.isVisible) {
@@ -149,17 +209,86 @@ export function AssignmentList({
               )}
             </div>
 
-            <div className="flex flex-col gap-2 text-right">
-              {getStatusBadge(assignment)}
-              <Link href={`/assignments/${assignment.id}`}>
-                <Button variant="outline" size="sm">
-                  Chi Tiết
-                </Button>
-              </Link>
+            <div className="flex flex-row gap-2 text-right">
+              {isTeacher && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openEdit(assignment)}
+                  >
+                    <Edit className="mr-2 h-4 w-4" /> Sửa
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => openDeleteFn(assignment)}
+                  >
+                    <Trash className="mr-2 h-4 w-4" /> Xóa
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </Card>
       ))}
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingAssignment ? "Cập Nhật Bài Tập" : "Tạo Bài Tập"}
+            </DialogTitle>
+            <DialogDescription>
+              {editingAssignment
+                ? "Chỉnh sửa thông tin bài tập"
+                : "Tạo một bài tập mới"}
+            </DialogDescription>
+          </DialogHeader>
+          {editingAssignment && (
+            <AssignmentScheduleForm
+              classId={classId}
+              assignmentId={editingAssignment.id}
+              initialData={{
+                title: editingAssignment.title,
+                description: editingAssignment.description,
+                dueDate: new Date(editingAssignment.dueDate),
+                maxScore: editingAssignment.maxScore,
+                isVisible: editingAssignment.isVisible,
+                scheduledReleaseAt: editingAssignment.scheduledReleaseAt
+                  ? new Date(editingAssignment.scheduledReleaseAt)
+                  : undefined,
+                scheduledCloseAt: editingAssignment.scheduledCloseAt
+                  ? new Date(editingAssignment.scheduledCloseAt)
+                  : undefined,
+                autoReleaseEnabled: editingAssignment.autoReleaseEnabled,
+                autoCloseEnabled: editingAssignment.autoCloseEnabled,
+              }}
+              onSuccess={async () => {
+                setIsDialogOpen(false);
+                setEditingAssignment(null);
+                await fetchAssignments();
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa bài tập</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn sắp xóa bài tập "{deleteTarget?.title}". Hành động này không
+              thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={doDelete}>Xóa</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

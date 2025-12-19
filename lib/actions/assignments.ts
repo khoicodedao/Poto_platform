@@ -613,23 +613,28 @@ export async function updateAssignment(
       };
     }
 
-    // Verify the assignment exists and belongs to teacher's class
+    // Verify the assignment exists and belongs to the user
     const [assignment] = await db
       .select({
         id: assignments.id,
         classId: assignments.classId,
-        teacherId: classes.teacherId,
+        createdById: assignments.createdById,
       })
       .from(assignments)
-      .leftJoin(classes, eq(assignments.classId, classes.id))
       .where(eq(assignments.id, assignmentId))
       .limit(1);
 
     if (!assignment) {
+      console.error(
+        `Assignment ${assignmentId} not found. User ID: ${user.id}, Role: ${user.role}`
+      );
       return { success: false, error: "Không tìm thấy bài tập" };
     }
 
-    if (user.role === "teacher" && assignment.teacherId !== user.id) {
+    if (user.role === "teacher" && assignment.createdById !== user.id) {
+      console.error(
+        `Authorization failed for assignment ${assignmentId}. Expected creator ${user.id}, got ${assignment.createdById}`
+      );
       return {
         success: false,
         error: "Bạn không có quyền chỉnh sửa bài tập này",
@@ -661,15 +666,14 @@ export async function deleteAssignment(assignmentId: number) {
       return { success: false, error: "Chỉ giáo viên mới có thể xóa bài tập" };
     }
 
-    // Verify the assignment exists and belongs to teacher's class
+    // Verify the assignment exists and belongs to the user
     const [assignment] = await db
       .select({
         id: assignments.id,
         classId: assignments.classId,
-        teacherId: classes.teacherId,
+        createdById: assignments.createdById,
       })
       .from(assignments)
-      .leftJoin(classes, eq(assignments.classId, classes.id))
       .where(eq(assignments.id, assignmentId))
       .limit(1);
 
@@ -677,7 +681,7 @@ export async function deleteAssignment(assignmentId: number) {
       return { success: false, error: "Không tìm thấy bài tập" };
     }
 
-    if (user.role === "teacher" && assignment.teacherId !== user.id) {
+    if (user.role === "teacher" && assignment.createdById !== user.id) {
       return { success: false, error: "Bạn không có quyền xóa bài tập này" };
     }
 

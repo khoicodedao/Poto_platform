@@ -11,24 +11,50 @@ import { useToast } from "@/hooks/use-toast";
 
 interface AssignmentScheduleFormProps {
   classId: number;
+  assignmentId?: number;
+  initialData?: {
+    title: string;
+    description: string;
+    dueDate: Date;
+    maxScore: number;
+    isVisible: boolean;
+    scheduledReleaseAt?: Date;
+    scheduledCloseAt?: Date;
+    autoReleaseEnabled: boolean;
+    autoCloseEnabled: boolean;
+  };
   onSuccess?: () => void;
 }
 
 export function AssignmentScheduleForm({
   classId,
+  assignmentId,
+  initialData,
   onSuccess,
 }: AssignmentScheduleFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  const formatDateForInput = (date: Date | string | undefined): string => {
+    if (!date) return "";
+    try {
+      const d = date instanceof Date ? date : new Date(date);
+      if (isNaN(d.getTime())) return "";
+      return d.toISOString().slice(0, 16);
+    } catch {
+      return "";
+    }
+  };
+
   const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    maxScore: 100,
-    dueDate: "",
-    autoReleaseEnabled: false,
-    autoCloseEnabled: false,
-    scheduledReleaseAt: "",
-    scheduledCloseAt: "",
+    title: initialData?.title ?? "",
+    description: initialData?.description ?? "",
+    maxScore: initialData?.maxScore ?? 100,
+    dueDate: formatDateForInput(initialData?.dueDate),
+    autoReleaseEnabled: initialData?.autoReleaseEnabled ?? false,
+    autoCloseEnabled: initialData?.autoCloseEnabled ?? false,
+    scheduledReleaseAt: formatDateForInput(initialData?.scheduledReleaseAt),
+    scheduledCloseAt: formatDateForInput(initialData?.scheduledCloseAt),
     allowPartialSubmission: false,
   });
 
@@ -37,8 +63,13 @@ export function AssignmentScheduleForm({
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/assignments", {
-        method: "POST",
+      const url = assignmentId
+        ? `/api/assignments/${assignmentId}`
+        : "/api/assignments";
+      const method = assignmentId ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
@@ -54,24 +85,34 @@ export function AssignmentScheduleForm({
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to create assignment");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message ||
+            `Failed to ${assignmentId ? "update" : "create"} assignment`
+        );
+      }
 
       toast({
         title: "Success",
-        description: "Bài tập được tạo thành công",
+        description: assignmentId
+          ? "Cập nhật bài tập thành công"
+          : "Bài tập được tạo thành công",
       });
 
-      setFormData({
-        title: "",
-        description: "",
-        maxScore: 100,
-        dueDate: "",
-        autoReleaseEnabled: false,
-        autoCloseEnabled: false,
-        scheduledReleaseAt: "",
-        scheduledCloseAt: "",
-        allowPartialSubmission: false,
-      });
+      if (!assignmentId) {
+        setFormData({
+          title: "",
+          description: "",
+          maxScore: 100,
+          dueDate: "",
+          autoReleaseEnabled: false,
+          autoCloseEnabled: false,
+          scheduledReleaseAt: "",
+          scheduledCloseAt: "",
+          allowPartialSubmission: false,
+        });
+      }
 
       onSuccess?.();
     } catch (error) {
@@ -88,7 +129,9 @@ export function AssignmentScheduleForm({
 
   return (
     <Card className="p-6">
-      <h2 className="text-xl font-bold mb-4">Tạo Bài Tập Mới</h2>
+      <h2 className="text-xl font-bold mb-4">
+        {assignmentId ? "Cập Nhật Bài Tập" : "Tạo Bài Tập Mới"}
+      </h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <Label>Tiêu đề bài tập</Label>
@@ -114,9 +157,9 @@ export function AssignmentScheduleForm({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols- gap-4">
           <div>
-            <Label>Điểm tối đa</Label>
+            <Label>Điểm tối đa </Label>
             <Input
               type="number"
               value={formData.maxScore}
@@ -211,7 +254,13 @@ export function AssignmentScheduleForm({
         </div>
 
         <Button type="submit" disabled={isLoading} className="w-full">
-          {isLoading ? "Đang tạo..." : "Tạo Bài Tập"}
+          {isLoading
+            ? assignmentId
+              ? "Đang cập nhật..."
+              : "Đang tạo..."
+            : assignmentId
+            ? "Cập Nhật Bài Tập"
+            : "Tạo Bài Tập"}
         </Button>
       </form>
     </Card>

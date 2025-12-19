@@ -179,6 +179,7 @@ export default function CreateClassPage() {
                 <Input
                   id="schedule"
                   value={formData.schedule}
+                  type="datetime-local"
                   onChange={(e) =>
                     handleInputChange("schedule", e.target.value)
                   }

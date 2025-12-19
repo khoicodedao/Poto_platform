@@ -91,7 +91,7 @@ export function CreateAssignmentForm({ classId }: Props) {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-1">
         <div className="space-y-2">
           <Label htmlFor="dueDate">Hạn nộp</Label>
           <Input
@@ -101,9 +101,10 @@ export function CreateAssignmentForm({ classId }: Props) {
             onChange={(e) => handleChange("dueDate", e.target.value)}
           />
         </div>
-
+      </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-1">
         <div className="space-y-2">
-          <Label htmlFor="maxScore">Điểm tối đa</Label>
+          <Label htmlFor="maxScore">Điểm tối đa 1</Label>
           <Input
             id="maxScore"
             type="number"
@@ -111,7 +112,10 @@ export function CreateAssignmentForm({ classId }: Props) {
             max={1000}
             value={formData.maxScore}
             onChange={(e) =>
-              handleChange("maxScore", Number.parseInt(e.target.value || "0", 10))
+              handleChange(
+                "maxScore",
+                Number.parseInt(e.target.value || "0", 10)
+              )
             }
           />
         </div>
