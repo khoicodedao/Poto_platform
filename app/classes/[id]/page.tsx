@@ -4,7 +4,7 @@ import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { getClassDetail } from "@/lib/actions/classes";
 import { getCurrentUser } from "@/lib/auth";
-import { ClassNavTabs } from "@/components/class-nav-tabs";
+
 import { CreateAssignmentForm } from "@/components/assignments/create-assignment-form";
 import { Button } from "@/components/ui/button";
 import {
@@ -146,8 +146,8 @@ export default async function ClassDetailPage({ params }: PageProps) {
     studentCount >= detail.maxStudents
       ? "Đã đủ học viên"
       : studentCount === 0
-      ? "Đang tuyển sinh"
-      : "Đang hoạt động";
+        ? "Đang tuyển sinh"
+        : "Đang hoạt động";
   const isOwner = user.role === "admin" || user.id === detail.teacherId;
   const upcomingAssignments = [...detail.assignments]
     .sort((a, b) => {
@@ -163,7 +163,6 @@ export default async function ClassDetailPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <ClassNavTabs />
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
         <nav className="text-sm text-gray-500" aria-label="Breadcrumb">
           <ol className="flex items-center space-x-2">

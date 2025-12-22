@@ -71,10 +71,10 @@ export async function getStudentPerformanceStats(
       overallScore: submissionStats[0]?.averageScore || 0,
       attendanceRate: attendanceStats[0]
         ? (
-            (attendanceStats[0].presentCount /
-              (attendanceStats[0].totalSessions || 1)) *
-            100
-          ).toFixed(2)
+          (attendanceStats[0].presentCount /
+            (attendanceStats[0].totalSessions || 1)) *
+          100
+        ).toFixed(2)
         : "0",
     };
   } catch (error) {
@@ -101,6 +101,7 @@ export async function getClassPerformanceStats(classId: number) {
         totalSubmissions: sql<number>`cast(count(distinct ${assignmentSubmissions.id}) as integer)`,
         averageScore: sql<number>`cast(avg(${assignmentSubmissions.score}) as decimal)`,
         submissionRate: sql<number>`cast(count(distinct case when ${assignmentSubmissions.submittedAt} is not null then ${assignmentSubmissions.id} end) * 100.0 / nullif(count(distinct ${assignmentSubmissions.id}), 0) as decimal)`,
+        lateSubmissionRate: sql<number>`cast(count(distinct case when ${assignmentSubmissions.submittedAt} > ${assignments.dueDate} then ${assignmentSubmissions.id} end) * 100.0 / nullif(count(distinct ${assignmentSubmissions.id}), 0) as decimal)`,
       })
       .from(assignments)
       .leftJoin(

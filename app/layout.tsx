@@ -4,6 +4,7 @@ import "@excalidraw/excalidraw/index.css";
 import { TopNav } from "@/components/top-nav";
 import { getCurrentSession } from "@/lib/auth";
 import { headers } from "next/headers";
+import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
   title: "EduPlatform",
@@ -29,6 +30,7 @@ export default async function RootLayout({
       <body className="bg-gray-50 text-gray-900 antialiased">
         {!hideTopNav && <TopNav user={session?.user ?? null} />}
         <div className={hideTopNav ? "" : "pt-20"}>{children}</div>
+        <Toaster />
       </body>
     </html>
   );

@@ -163,7 +163,11 @@ export function AssignmentList({
         <Card key={assignment.id} className="p-4">
           <div className="flex justify-between items-start gap-4">
             <div className="flex-1">
-              <h3 className="font-bold text-lg mb-2">{assignment.title}</h3>
+              <Link href={`/assignments/${assignment.id}`}>
+                <h3 className="font-bold text-lg mb-2 hover:text-blue-600 cursor-pointer transition-colors">
+                  {assignment.title}
+                </h3>
+              </Link>
               <p className="text-gray-600 mb-3">{assignment.description}</p>
 
               <div className="grid grid-cols-2 gap-2 text-sm mb-3">
@@ -171,8 +175,8 @@ export function AssignmentList({
                   <span className="font-semibold">Hạn Nộp:</span>
                   {assignment.dueDate
                     ? format(new Date(assignment.dueDate), "HH:mm dd/MM/yyyy", {
-                        locale: vi,
-                      })
+                      locale: vi,
+                    })
                     : "N/A"}
                 </div>
                 <div>

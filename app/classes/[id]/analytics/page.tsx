@@ -1,30 +1,44 @@
-"use client";
+import { ClassPerformanceDashboard, AtRiskStudentsAlert } from "@/components/analytics-dashboard";
+import { getCurrentSession } from "@/lib/auth";
+import { redirect, notFound } from "next/navigation";
+import { getClassDetail } from "@/lib/actions/classes";
+import { CustomBreadcrumb } from "@/components/custom-breadcrumb";
 
-import { useParams } from "next/navigation";
-import {
-  ClassPerformanceDashboard,
-  AtRiskStudentsAlert,
-} from "@/components/analytics-dashboard";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+export default async function ClassAnalyticsPage({ params }: { params: { id: string } }) {
+  const session = await getCurrentSession();
+  if (!session) {
+    redirect("/auth/signin");
+  }
 
-export default function ClassAnalyticsPage() {
-  const params = useParams();
-  const classId = parseInt(params.id as string);
+  const classId = parseInt(params.id);
+  if (isNaN(classId)) return notFound();
+
+  const classDetail = await getClassDetail(classId);
+  if (!classDetail) return notFound();
 
   return (
-    <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Class Analytics</h1>
-        <p className="text-gray-500 mt-2">
-          Performance metrics and student insights
-        </p>
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="space-y-6">
+        <CustomBreadcrumb
+          items={[
+            { label: "Lớp học", href: "/classes" },
+            { label: classDetail.name, href: `/classes/${classId}` },
+            { label: "Phân tích" },
+          ]}
+        />
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Phân Tích Lớp Học</h1>
+          <p className="text-gray-500 mt-2">
+            Số liệu thống kê và thông tin chi tiết về học viên
+          </p>
+        </div>
+
+        {/* At-Risk Students Alert */}
+        <AtRiskStudentsAlert classId={classId} />
+
+        {/* Main Dashboard */}
+        <ClassPerformanceDashboard classId={classId} />
       </div>
-
-      {/* At-Risk Students Alert */}
-      <AtRiskStudentsAlert classId={classId} />
-
-      {/* Main Dashboard */}
-      <ClassPerformanceDashboard classId={classId} />
     </div>
   );
 }

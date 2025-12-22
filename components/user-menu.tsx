@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { User, Settings, LogOut, BookOpen } from "lucide-react"
 import { signOutAction } from "@/lib/actions/auth"
-import type { AuthUser } from "@/lib/auth"
+import type { AuthUser } from "@/lib/auth-types"
 
 interface UserMenuProps {
   user: AuthUser

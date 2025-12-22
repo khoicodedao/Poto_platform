@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useParams } from "next/navigation";
-import type { AuthUser } from "@/lib/auth";
+import type { AuthUser } from "@/lib/auth-types";
 import { Button } from "@/components/ui/button";
 import UserMenu from "@/components/user-menu";
 import { NotificationCenter } from "@/components/notification-center";

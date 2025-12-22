@@ -34,6 +34,10 @@ interface FilesListProps {
 export function FilesList({ classId, isTeacher = false }: FilesListProps) {
   const [files, setFiles] = useState<ClassFile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [displayName, setDisplayName] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -66,6 +70,55 @@ export function FilesList({ classId, isTeacher = false }: FilesListProps) {
     if (type.includes("pdf") || type.includes("word") || type.includes("sheet"))
       return FileText;
     return File;
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile) {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng chọn file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+      if (displayName) {
+        formData.append("displayName", displayName);
+      }
+
+      const response = await fetch(`/api/classes/${classId}/files`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to upload file");
+      }
+
+      toast({
+        title: "Thành công",
+        description: "Đã tải lên tệp thành công",
+      });
+
+      setShowUploadDialog(false);
+      setSelectedFile(null);
+      setDisplayName("");
+      fetchFiles();
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description:
+          error instanceof Error ? error.message : "Failed to upload file",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleDelete = async (fileId: number) => {
@@ -105,10 +158,60 @@ export function FilesList({ classId, isTeacher = false }: FilesListProps) {
   return (
     <div className="space-y-4">
       {isTeacher && (
-        <Button className="gap-2">
-          <Upload className="h-4 w-4" />
-          Tải Lên Tệp Mới
-        </Button>
+        <>
+          <Button className="gap-2" onClick={() => setShowUploadDialog(true)}>
+            <Upload className="h-4 w-4" />
+            Tải Lên Tệp Mới
+          </Button>
+
+          {showUploadDialog && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                <h3 className="text-lg font-semibold mb-4">Tải lên tệp</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Tên hiển thị (tùy chọn)
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full border rounded px-3 py-2"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      placeholder="Tên tệp..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Chọn tệp
+                    </label>
+                    <input
+                      type="file"
+                      className="w-full"
+                      onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                    />
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setShowUploadDialog(false);
+                        setSelectedFile(null);
+                        setDisplayName("");
+                      }}
+                      disabled={isUploading}
+                    >
+                      Hủy
+                    </Button>
+                    <Button onClick={handleUpload} disabled={isUploading}>
+                      {isUploading ? "Đang tải..." : "Tải lên"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {files.length === 0 ? (
@@ -148,8 +251,8 @@ export function FilesList({ classId, isTeacher = false }: FilesListProps) {
                         <TableCell className="text-sm text-gray-500">
                           {file.uploadedAt
                             ? new Date(file.uploadedAt).toLocaleDateString(
-                                "vi-VN"
-                              )
+                              "vi-VN"
+                            )
                             : "N/A"}
                         </TableCell>
                         <TableCell className="text-sm">
@@ -202,8 +305,8 @@ export function FilesList({ classId, isTeacher = false }: FilesListProps) {
                             Tải lên:{" "}
                             {file.uploadedAt
                               ? new Date(file.uploadedAt).toLocaleDateString(
-                                  "vi-VN"
-                                )
+                                "vi-VN"
+                              )
                               : "N/A"}
                           </div>
                         </div>

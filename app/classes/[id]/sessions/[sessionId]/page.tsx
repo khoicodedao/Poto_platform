@@ -16,6 +16,7 @@ import { AlertCircle, Clock, Users } from "lucide-react";
 import { AttendanceChecklist } from "@/components/attendance-checklist";
 import { StudentFeedbackForm } from "@/components/student-feedback-form";
 import { ClassReportForm } from "@/components/class-report-form";
+import { CustomBreadcrumb } from "@/components/custom-breadcrumb";
 
 interface ClassSession {
   id: number;
@@ -47,11 +48,14 @@ export default function SessionDetailPage() {
   const [feedbacks, setFeedbacks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [className, setClassName] = useState<string>("");
 
   useEffect(() => {
     fetchSessionData();
     fetchClassStudents();
     fetchFeedbacks();
+    fetchClassDetails();
+    fetchAttendanceCount();
   }, [sessionId, classId]);
 
   const fetchSessionData = async () => {
@@ -65,6 +69,18 @@ export default function SessionDetailPage() {
     }
   };
 
+  const fetchClassDetails = async () => {
+    try {
+      const response = await fetch(`/api/classes/${classId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setClassName(data.class?.name || "Lớp học");
+      }
+    } catch (error) {
+      console.error("Error fetching class details:", error);
+    }
+  };
+
   const fetchClassStudents = async () => {
     try {
       const response = await fetch(`/api/classes/${classId}/students`);
@@ -74,10 +90,10 @@ export default function SessionDetailPage() {
       setStudents(
         Array.isArray(studentsData)
           ? studentsData.map((s: any) => ({
-              studentId: s.id ?? s.studentId,
-              name: s.name ?? "Học sinh",
-              email: s.email ?? "",
-            }))
+            studentId: s.id ?? s.studentId,
+            name: s.name ?? "Học sinh",
+            email: s.email ?? "",
+          }))
           : []
       );
     } catch (err) {
@@ -92,7 +108,11 @@ export default function SessionDetailPage() {
       const res = await fetch(`/api/attendance?sessionId=${sessionId}`);
       if (!res.ok) return setAttendanceCount(0);
       const data = await res.json();
-      setAttendanceCount(Array.isArray(data) ? data.length : 0);
+      // Only count students who are present, late, or early-leave (not absent)
+      const validAttendance = Array.isArray(data)
+        ? data.filter((record: any) => record.status !== "absent")
+        : [];
+      setAttendanceCount(validAttendance.length);
     } catch (err) {
       console.error("Error fetching attendance:", err);
       setAttendanceCount(0);
@@ -149,6 +169,14 @@ export default function SessionDetailPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 pt-24">
+      <CustomBreadcrumb
+        items={[
+          { label: "Quản lý lớp học", href: "/classes" },
+          { label: className || `Lớp ${classId}`, href: `/classes/${classId}` },
+          { label: session.title, href: `/classes/${classId}/sessions/${sessionId}` },
+        ]}
+      />
+
       <div className="mb-6">
         <h1 className="text-3xl font-bold">{session.title}</h1>
         {session.description && (

@@ -12,6 +12,8 @@ import {
   Bell,
   BookOpen,
   Home,
+  Trophy,
+  Settings,
 } from "lucide-react";
 
 const classNavItems = [
@@ -57,9 +59,25 @@ const classNavItems = [
     href: "/files",
     description: "Chia sẻ tài liệu",
   },
+  {
+    icon: Trophy,
+    label: "Kết quả",
+    href: "/my-performance",
+    description: "Kết quả học tập",
+  },
+  {
+    icon: Settings,
+    label: "Cài đặt",
+    href: "/edit",
+    description: "Cài đặt lớp học",
+  },
 ];
 
-export function ClassNavTabs() {
+interface ClassNavTabsProps {
+  className?: string;
+}
+
+export function ClassNavTabs({ className }: ClassNavTabsProps) {
   const pathname = usePathname();
   const params = useParams();
   const classId = params?.id;
@@ -67,9 +85,9 @@ export function ClassNavTabs() {
   if (!classId) return null;
 
   return (
-    <div className="border-b border-gray-200 bg-white">
+    <div className="border-b border-indigo-500 bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-700 shadow-md">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex gap-1 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-1 overflow-x-auto scrollbar-hide py-1">
           {classNavItems.map((item) => {
             const Icon = item.icon;
             const href =
@@ -81,19 +99,22 @@ export function ClassNavTabs() {
                 ? pathname === `/classes/${classId}`
                 : pathname?.includes(item.href);
 
+            const label =
+              item.label === "Trang Chủ" && className ? className : item.label;
+
             return (
               <Link key={href} href={href} className="flex-shrink-0">
                 <button
                   className={clsx(
-                    "flex items-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-colors",
+                    "flex items-center gap-2 whitespace-nowrap rounded-t-lg px-4 py-3 text-sm font-medium transition-all duration-200",
                     isActive
-                      ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-600 hover:text-gray-900"
+                      ? "bg-white text-indigo-700 shadow-sm translate-y-0.5"
+                      : "text-indigo-100 hover:bg-white/10 hover:text-white"
                   )}
                 >
-                  <Icon className="h-4 w-4" />
-                  <span className="hidden sm:inline">{item.label}</span>
-                  <span className="sm:hidden text-xs">{item.label}</span>
+                  <Icon className={clsx("h-4 w-4", isActive ? "text-indigo-600" : "text-indigo-200")} />
+                  <span className="hidden sm:inline font-bold">{label}</span>
+                  <span className="sm:hidden text-xs">{label}</span>
                 </button>
               </Link>
             );

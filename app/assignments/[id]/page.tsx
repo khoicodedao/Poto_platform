@@ -1,4 +1,6 @@
 import Link from "next/link"
+import { GradingDialog } from "@/components/assignments/grading-dialog"
+import { CustomBreadcrumb } from "@/components/custom-breadcrumb"
 import { notFound, redirect } from "next/navigation"
 import { getAssignmentDetail } from "@/lib/actions/assignments"
 import { getCurrentSession } from "@/lib/auth"
@@ -113,17 +115,12 @@ export default async function AssignmentDetailPage({ params }: { params: { id: s
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
-        <div className="flex items-center text-sm text-gray-500 gap-2" aria-label="Breadcrumb">
-          <Link href="/" className="hover:text-gray-900">
-            Trang chủ
-          </Link>
-          <ChevronRight className="h-4 w-4" />
-          <Link href="/assignments" className="hover:text-gray-900">
-            Bài tập
-          </Link>
-          <ChevronRight className="h-4 w-4" />
-          <span className="font-medium text-gray-800">{detail.title}</span>
-        </div>
+        <CustomBreadcrumb
+          items={[
+            { label: "Bài tập", href: "/assignments" },
+            { label: detail.title },
+          ]}
+        />
 
         <Card className="shadow">
           <CardHeader className="space-y-4">
@@ -327,6 +324,14 @@ export default async function AssignmentDetailPage({ params }: { params: { id: s
                         <Badge variant={submission.status === "graded" ? "default" : "secondary"}>
                           {formatStatusLabel(submission.status)}
                         </Badge>
+                        <div className="flex items-center gap-2">
+                          <GradingDialog
+                            submissionId={submission.id}
+                            studentName={submission.studentName ?? "Học viên"}
+                            initialScore={submission.score}
+                            initialFeedback={submission.feedback}
+                          />
+                        </div>
                       </div>
                       <div className="mt-3 grid gap-3 text-sm text-gray-600 md:grid-cols-3">
                         <div className="flex items-center">

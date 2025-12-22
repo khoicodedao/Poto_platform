@@ -34,7 +34,7 @@ interface ClassStats {
 
 interface ChartData {
   name: string;
-  value: number;
+  value?: number;
   [key: string]: any;
 }
 
@@ -54,7 +54,12 @@ export function ClassAnalyticsDashboard({ classId }: ClassAnalyticsProps) {
         );
         if (!statsResponse.ok) throw new Error("Failed to fetch stats");
         const statsData = await statsResponse.json();
-        setStats(statsData);
+        setStats({
+          avgScore: Number(statsData.assignments?.averageScore || 0),
+          submissionRate: Number(statsData.assignments?.submissionRate || 0),
+          attendanceRate: Number(statsData.attendance?.averageAttendance || 0),
+          lateSubmissionRate: Number(statsData.assignments?.lateSubmissionRate || 0),
+        });
 
         // Fetch submission timeline
         const submissionResponse = await fetch(
@@ -63,7 +68,14 @@ export function ClassAnalyticsDashboard({ classId }: ClassAnalyticsProps) {
         if (!submissionResponse.ok)
           throw new Error("Failed to fetch submissions");
         const submissionData = await submissionResponse.json();
-        setSubmissionChart(submissionData.timeline || []);
+        // Map API data to ChartData format
+        const chartData = Array.isArray(submissionData)
+          ? submissionData.map((item: any) => ({
+            name: new Date(item.date).toLocaleDateString('vi-VN'),
+            value: item.submissionCount
+          }))
+          : [];
+        setSubmissionChart(chartData);
 
         // Fetch attendance trends
         const attendanceResponse = await fetch(
@@ -72,7 +84,16 @@ export function ClassAnalyticsDashboard({ classId }: ClassAnalyticsProps) {
         if (!attendanceResponse.ok)
           throw new Error("Failed to fetch attendance");
         const attendanceData = await attendanceResponse.json();
-        setAttendanceChart(attendanceData.trends || []);
+        // Map API data to ChartData format
+        const attChartData = Array.isArray(attendanceData)
+          ? attendanceData.map((item: any) => ({
+            name: item.sessionTitle,
+            present: item.presentCount,
+            absent: item.absentCount,
+            late: item.lateCount
+          }))
+          : [];
+        setAttendanceChart(attChartData);
       } catch (error) {
         toast({
           title: "Error",

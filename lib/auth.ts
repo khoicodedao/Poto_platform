@@ -6,16 +6,8 @@ import { db, users, sessions } from "@/db";
 import { eq, and, gt, lt } from "drizzle-orm";
 import crypto from "crypto";
 
-export interface AuthUser {
-  id: number;
-  email: string;
-  name: string;
-  role: "student" | "teacher" | "admin";
-  avatar: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  session_id?: string;
-}
+import { AuthUser } from "@/lib/auth-types";
+export type { AuthUser };
 
 // Generate secure session ID
 function generateSessionId(): string {

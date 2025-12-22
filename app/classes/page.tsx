@@ -24,32 +24,21 @@ import { getCurrentUser } from "@/lib/auth";
 import { getClassesForUser } from "@/lib/actions/classes";
 import { redirect } from "next/navigation";
 
+import { CustomBreadcrumb } from "@/components/custom-breadcrumb";
+
 export default async function ClassesPage() {
   const user = await getCurrentUser();
 
-  // if (!user) {
-  //   // chưa đăng nhập → tuỳ bạn, có thể redirect
-  //   redirect("/login");
-  // }
+  if (!user) {
+    redirect("/auth/signin");
+  }
 
   const classes = await getClassesForUser(user.id, user.role as any);
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <nav className="mb-6 text-sm text-gray-500" aria-label="Breadcrumb">
-          <ol className="flex items-center space-x-2">
-            <li>
-              <Link href="/" className="hover:text-gray-900">
-                Trang chủ
-              </Link>
-            </li>
-            <li className="text-gray-400">
-              <ChevronRight className="h-4 w-4" />
-            </li>
-            <li className="font-medium text-gray-700">Lớp học</li>
-          </ol>
-        </nav>
+        <CustomBreadcrumb items={[{ label: "Lớp học" }]} />
         {/* Page Header */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
@@ -59,8 +48,8 @@ export default async function ClassesPage() {
             {user.role === "teacher"
               ? "Các lớp bạn đang giảng dạy"
               : user.role === "student"
-              ? "Các lớp bạn đang tham gia"
-              : "Quản lý tất cả lớp học trên hệ thống"}
+                ? "Các lớp bạn đang tham gia"
+                : "Quản lý tất cả lớp học trên hệ thống"}
           </p>
         </div>
 

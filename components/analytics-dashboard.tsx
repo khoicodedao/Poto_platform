@@ -65,7 +65,7 @@ export function ClassPerformanceDashboard({ classId }: { classId: number }) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {perfData?.assignments?.averageScore?.toFixed(1) || "0"}
+              {Number(perfData?.assignments?.averageScore || 0).toFixed(1)}
               <span className="text-sm font-normal text-gray-500">/100</span>
             </div>
             <p className="text-xs text-gray-500 mt-1">
@@ -82,7 +82,7 @@ export function ClassPerformanceDashboard({ classId }: { classId: number }) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {perfData?.assignments?.submissionRate?.toFixed(1) || "0"}%
+              {Number(perfData?.assignments?.submissionRate || 0).toFixed(1)}%
             </div>
             <p className="text-xs text-gray-500 mt-1">
               {perfData?.assignments?.totalSubmissions || 0} submissions
@@ -98,7 +98,7 @@ export function ClassPerformanceDashboard({ classId }: { classId: number }) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {perfData?.attendance?.averageAttendance?.toFixed(1) || "0"}%
+              {Number(perfData?.attendance?.averageAttendance || 0).toFixed(1)}%
             </div>
             <p className="text-xs text-gray-500 mt-1">
               {perfData?.attendance?.totalSessions || 0} sessions
@@ -112,7 +112,7 @@ export function ClassPerformanceDashboard({ classId }: { classId: number }) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {perfData?.attendance?.lateRate?.toFixed(1) || "0"}%
+              {Number(perfData?.attendance?.lateRate || 0).toFixed(1)}%
             </div>
             <p className="text-xs text-gray-500 mt-1">Students arriving late</p>
           </CardContent>
@@ -231,7 +231,7 @@ export function StudentDashboard({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {perfData?.overallScore?.toFixed(1) || "0"}%
+              {Number(perfData?.overallScore || 0).toFixed(1)}%
             </div>
             <p className="text-xs text-gray-500 mt-1">
               {perfData?.assignments?.submittedCount || 0} submitted

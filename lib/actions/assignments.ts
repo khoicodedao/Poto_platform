@@ -447,6 +447,7 @@ export async function createAssignment(data: CreateAssignmentData) {
         classId: data.classId,
         dueDate: data.dueDate,
         maxScore: data.maxScore,
+        createdById: user.id,
       })
       .returning();
 
@@ -619,8 +620,10 @@ export async function updateAssignment(
         id: assignments.id,
         classId: assignments.classId,
         createdById: assignments.createdById,
+        teacherId: classes.teacherId,
       })
       .from(assignments)
+      .leftJoin(classes, eq(assignments.classId, classes.id))
       .where(eq(assignments.id, assignmentId))
       .limit(1);
 
@@ -631,9 +634,15 @@ export async function updateAssignment(
       return { success: false, error: "Không tìm thấy bài tập" };
     }
 
-    if (user.role === "teacher" && assignment.createdById !== user.id) {
+    // Allow if user is Creator OR the Teacher of the class
+    const isCreator = assignment.createdById === user.id;
+    const isClassTeacher =
+      user.role === "teacher" && assignment.teacherId === user.id;
+    const isAdmin = user.role === "admin";
+
+    if (!isCreator && !isClassTeacher && !isAdmin) {
       console.error(
-        `Authorization failed for assignment ${assignmentId}. Expected creator ${user.id}, got ${assignment.createdById}`
+        `Authorization failed for assignment ${assignmentId}. User ${user.id} is not creator or class teacher.`
       );
       return {
         success: false,
@@ -672,8 +681,10 @@ export async function deleteAssignment(assignmentId: number) {
         id: assignments.id,
         classId: assignments.classId,
         createdById: assignments.createdById,
+        teacherId: classes.teacherId,
       })
       .from(assignments)
+      .leftJoin(classes, eq(assignments.classId, classes.id))
       .where(eq(assignments.id, assignmentId))
       .limit(1);
 
@@ -681,7 +692,13 @@ export async function deleteAssignment(assignmentId: number) {
       return { success: false, error: "Không tìm thấy bài tập" };
     }
 
-    if (user.role === "teacher" && assignment.createdById !== user.id) {
+    // Allow if user is Creator OR the Teacher of the class
+    const isCreator = assignment.createdById === user.id;
+    const isClassTeacher =
+      user.role === "teacher" && assignment.teacherId === user.id;
+    const isAdmin = user.role === "admin";
+
+    if (!isCreator && !isClassTeacher && !isAdmin) {
       return { success: false, error: "Bạn không có quyền xóa bài tập này" };
     }
 

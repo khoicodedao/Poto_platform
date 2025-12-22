@@ -17,28 +17,30 @@ export default function StudentAnalyticsPage({
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">My Performance</h1>
-        <p className="text-gray-500 mt-2">
-          Your grades, attendance, and progress
-        </p>
-      </div>
-
-      <StudentDashboard classId={classId} studentId={user.id} />
-
-      {/* Detailed Breakdown */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Progress Overview</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-gray-600">
-          <p>
-            View detailed breakdowns of your assignments and session attendance
-            in the class.
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Kết Quả Học Tập</h1>
+          <p className="text-gray-500 mt-2">
+            Điểm số, điểm danh và tiến độ học tập của bạn
           </p>
-        </CardContent>
-      </Card>
+        </div>
+
+        <StudentDashboard classId={classId} studentId={user.id} />
+
+        {/* Detailed Breakdown */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Tổng Quan Tiến Độ</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-gray-600">
+            <p>
+              Xem chi tiết phân tích về bài tập và điểm danh các buổi học
+              trong lớp.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
