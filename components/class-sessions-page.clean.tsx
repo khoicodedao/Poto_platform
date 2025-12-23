@@ -118,13 +118,33 @@ export function ClassSessionsPage({
   const statusBadge = (s: ClassSession) => {
     switch (s.status) {
       case "scheduled":
-        return <Badge className="bg-blue-600">Đã Lên Lịch</Badge>;
+        return (
+          <Badge className="bg-sky-100 text-sky-700 border border-sky-200">
+            Đã lên lịch
+          </Badge>
+        );
+
       case "in-progress":
-        return <Badge className="bg-green-600">Đang Diễn Ra</Badge>;
+        return (
+          <Badge className="bg-emerald-100 text-emerald-700 border border-emerald-200">
+            Đang diễn ra
+          </Badge>
+        );
+
       case "completed":
-        return <Badge className="bg-gray-600">Đã Kết Thúc</Badge>;
+        return (
+          <Badge className="bg-slate-100 text-slate-700 border border-slate-200">
+            Đã kết thúc
+          </Badge>
+        );
+
       case "cancelled":
-        return <Badge variant="destructive">Đã Hủy</Badge>;
+        return (
+          <Badge className="bg-rose-100 text-rose-700 border border-rose-200">
+            Đã hủy
+          </Badge>
+        );
+
       default:
         return null;
     }
@@ -231,12 +251,12 @@ export function ClassSessionsPage({
             initialData={
               editingSession
                 ? {
-                    title: editingSession.title,
-                    description: editingSession.description,
-                    scheduledAt: new Date(editingSession.scheduledAt),
-                    durationMinutes: editingSession.durationMinutes,
-                    sessionNumber: editingSession.sessionNumber,
-                  }
+                  title: editingSession.title,
+                  description: editingSession.description,
+                  scheduledAt: new Date(editingSession.scheduledAt),
+                  durationMinutes: editingSession.durationMinutes,
+                  sessionNumber: editingSession.sessionNumber,
+                }
                 : undefined
             }
             onSuccess={async () => {
