@@ -17,6 +17,7 @@ export async function POST(req: Request) {
       scheduledAt: new Date(body.scheduledAt),
       durationMinutes: body.durationMinutes || 60,
       sessionNumber: body.sessionNumber,
+      guestTeacherId: body.guestTeacherId || null,
     });
 
     if (!result.success) {

@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { db } from './index';
 import { users, classes, classEnrollments, assignments, files, messages } from './schema';
 import bcrypt from 'bcryptjs';
@@ -6,6 +7,17 @@ async function seed() {
   console.log('Starting database seed...');
 
   const hashedPassword = await bcrypt.hash('123456', 10);
+
+  // Create admin account
+  const [admin] = await db.insert(users).values([
+    {
+      email: 'admin@example.com',
+      password: hashedPassword,
+      name: 'Quản Trị Viên',
+      role: 'admin',
+      avatar: '/placeholder-user.jpg',
+    },
+  ]).returning();
 
   const [teacher1] = await db.insert(users).values([
     {
@@ -83,6 +95,7 @@ async function seed() {
       title: 'Bài tập HTML/CSS cơ bản',
       description: 'Tạo một trang web giới thiệu bản thân sử dụng HTML và CSS',
       classId: class1.id,
+      createdById: teacher1.id,
       dueDate: new Date('2025-11-30'),
       maxScore: 100,
     },
@@ -93,6 +106,7 @@ async function seed() {
       title: 'Bài tập Python - Vòng lặp',
       description: 'Viết chương trình in ra bảng cửu chương',
       classId: class2.id,
+      createdById: teacher2.id,
       dueDate: new Date('2025-11-25'),
       maxScore: 100,
     },
@@ -118,12 +132,13 @@ async function seed() {
 
   console.log('Database seeded successfully!');
   console.log('\nDemo accounts:');
+  console.log('Admin:     admin@example.com / 123456');
   console.log('Teacher 1: teacher1@example.com / 123456');
   console.log('Teacher 2: teacher2@example.com / 123456');
   console.log('Student 1: student1@example.com / 123456');
   console.log('Student 2: student2@example.com / 123456');
   console.log('Student 3: student3@example.com / 123456');
-  
+
   process.exit(0);
 }
 

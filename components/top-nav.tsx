@@ -147,10 +147,25 @@ export function TopNav({ user }: TopNavProps) {
                 </Link>
               );
             })}
+
+            {/* Admin Link - Only for admin */}
+            {user && user.role === "admin" && (
+              <Link
+                href="/admin/dashboard"
+                className={clsx(
+                  "rounded-full px-4 py-1 transition",
+                  pathname.startsWith("/admin")
+                    ? "bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg"
+                    : "text-gray-500 hover:text-gray-900"
+                )}
+              >
+                ⚡ Admin
+              </Link>
+            )}
           </nav>
 
-          {/* Class Features Dropdown */}
-          {inClassPage && (
+          {/* Class Features Dropdown - Only for teachers/admins */}
+          {inClassPage && user && user.role !== "student" && (
             <div className="ml-2 hidden md:block">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

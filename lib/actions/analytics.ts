@@ -9,6 +9,7 @@ import {
   classSessions,
   attendance,
   classReports,
+  classEnrollments,
 } from "@/db/schema";
 import { getCurrentSession } from "@/lib/auth";
 import { eq, and, gte, lte, sql } from "drizzle-orm";
@@ -175,6 +176,7 @@ export async function getTopStudents(classId: number, limit = 10) {
 
 export async function getStudentsNeedingAttention(classId: number) {
   try {
+    // Only get students enrolled in this specific class
     const lowPerformers = await db
       .select({
         studentId: users.id,
@@ -183,11 +185,18 @@ export async function getStudentsNeedingAttention(classId: number) {
         averageScore: sql<number>`cast(avg(${assignmentSubmissions.score}) as decimal)`,
         attendanceRate: sql<number>`cast(sum(case when ${attendance.status} = 'present' then 1 else 0 end) * 100.0 / nullif(sum(case when ${attendance.status} in ('present', 'absent', 'late') then 1 else 0 end), 0) as decimal)`,
         issues: sql<string>`case 
-          when cast(avg(${assignmentSubmissions.score}) as decimal) < 50 then 'Low Scores'
-          when cast(sum(case when ${attendance.status} = 'absent' then 1 else 0 end) * 100.0 / nullif(sum(case when ${attendance.status} in ('present', 'absent', 'late') then 1 else 0 end), 0) as decimal) > 30 then 'Poor Attendance'
-          else 'Monitor' end`,
+          when cast(avg(${assignmentSubmissions.score}) as decimal) < 50 then 'Điểm thấp'
+          when cast(sum(case when ${attendance.status} = 'absent' then 1 else 0 end) * 100.0 / nullif(sum(case when ${attendance.status} in ('present', 'absent', 'late') then 1 else 0 end), 0) as decimal) > 30 then 'Vắng nhiều'
+          else 'Cần theo dõi' end`,
       })
       .from(users)
+      .innerJoin(
+        classEnrollments,
+        and(
+          eq(classEnrollments.studentId, users.id),
+          eq(classEnrollments.classId, classId)
+        )
+      )
       .leftJoin(
         assignmentSubmissions,
         eq(assignmentSubmissions.studentId, users.id)
@@ -199,7 +208,17 @@ export async function getStudentsNeedingAttention(classId: number) {
           eq(assignments.classId, classId)
         )
       )
-      .leftJoin(attendance, eq(attendance.studentId, users.id))
+      .leftJoin(
+        attendance,
+        eq(attendance.studentId, users.id)
+      )
+      .leftJoin(
+        classSessions,
+        and(
+          eq(classSessions.id, attendance.sessionId),
+          eq(classSessions.classId, classId)
+        )
+      )
       .groupBy(users.id)
       .having(
         sql`cast(avg(${assignmentSubmissions.score}) as decimal) < 50 

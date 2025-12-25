@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
 import {
   AlertCircle,
   Plus,
@@ -61,9 +62,11 @@ export function ClassSessionsPage({
   className: string;
 }) {
   const router = useRouter();
+  const { toast } = useToast();
   const [sessions, setSessions] = useState<ClassSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSession, setEditingSession] = useState<ClassSession | null>(
@@ -75,8 +78,21 @@ export function ClassSessionsPage({
 
   useEffect(() => {
     fetchSessions();
+    fetchUserRole();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [classId]);
+
+  async function fetchUserRole() {
+    try {
+      const res = await fetch("/api/auth/me");
+      if (res.ok) {
+        const data = await res.json();
+        setUserRole(data.user?.role || null);
+      }
+    } catch (e) {
+      console.error("Failed to fetch user role:", e);
+    }
+  }
 
   async function fetchSessions() {
     try {
@@ -211,13 +227,15 @@ export function ClassSessionsPage({
             >
               <ArrowLeft className="mr-2 h-4 w-4" /> Quay lại
             </Button>
-            <Button
-              size="lg"
-              onClick={openCreate}
-              className="bg-white text-purple-600 hover:bg-white/90 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 font-semibold"
-            >
-              <Plus className="mr-2 h-4 w-4" /> Tạo Buổi Học
-            </Button>
+            {userRole && userRole !== "student" && (
+              <Button
+                size="lg"
+                onClick={openCreate}
+                className="bg-white text-purple-600 hover:bg-white/90 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 font-semibold"
+              >
+                <Plus className="mr-2 h-4 w-4" /> Tạo Buổi Học
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -263,16 +281,21 @@ export function ClassSessionsPage({
               Chưa có buổi học nào
             </h3>
             <p className="text-gray-500 mb-6">
-              Hãy tạo buổi học đầu tiên để bắt đầu lộ trình học tập
+              {userRole === "student"
+                ? "Chưa có buổi học nào được lên lịch"
+                : "Hãy tạo buổi học đầu tiên để bắt đầu lộ trình học tập"
+              }
             </p>
-            <Button
-              onClick={openCreate}
-              size="lg"
-              className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
-            >
-              <Plus className="mr-2 h-5 w-5" />
-              Tạo Buổi Học Đầu Tiên
-            </Button>
+            {userRole && userRole !== "student" && (
+              <Button
+                onClick={openCreate}
+                size="lg"
+                className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+              >
+                <Plus className="mr-2 h-5 w-5" />
+                Tạo Buổi Học Đầu Tiên
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -356,20 +379,24 @@ export function ClassSessionsPage({
                           <Eye className="mr-2 h-4 w-4" /> Xem
                         </Button>
                       </Link>
-                      <Button
-                        variant="outline"
-                        onClick={() => openEdit(s)}
-                        className="w-full hover:bg-orange-50 hover:border-orange-300 hover:text-orange-600 transition-all duration-200"
-                      >
-                        <Edit className="mr-2 h-4 w-4" /> Sửa
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => openDeleteFn(s)}
-                        className="w-full hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-all duration-200"
-                      >
-                        <Trash className="mr-2 h-4 w-4" /> Xóa
-                      </Button>
+                      {userRole && userRole !== "student" && (
+                        <>
+                          <Button
+                            variant="outline"
+                            onClick={() => openEdit(s)}
+                            className="w-full hover:bg-orange-50 hover:border-orange-300 hover:text-orange-600 transition-all duration-200"
+                          >
+                            <Edit className="mr-2 h-4 w-4" /> Sửa
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => openDeleteFn(s)}
+                            className="w-full hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-all duration-200"
+                          >
+                            <Trash className="mr-2 h-4 w-4" /> Xóa
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </CardContent>

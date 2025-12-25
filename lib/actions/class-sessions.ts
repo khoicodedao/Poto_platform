@@ -22,6 +22,7 @@ export async function createClassSession(data: {
   scheduledAt: Date;
   durationMinutes?: number;
   sessionNumber?: number;
+  guestTeacherId?: number | null;
 }) {
   try {
     const session = await getCurrentSession();
@@ -87,6 +88,7 @@ export async function updateClassSession(
     scheduledAt?: Date;
     status?: "scheduled" | "in-progress" | "completed" | "cancelled";
     durationMinutes?: number;
+    guestTeacherId?: number | null;
   }
 ) {
   try {

@@ -17,10 +17,11 @@ import {
   Video,
   Clock,
 } from "lucide-react";
-import { getClassesForUser } from "@/lib/actions/classes";
+import { getClassesForUser, getGuestSessionsForTeacher } from "@/lib/actions/classes";
 import { getAssignments } from "@/lib/actions/assignments";
 import { getFiles } from "@/lib/actions/files";
 import { getCurrentSession } from "@/lib/auth";
+import { Badge } from "@/components/ui/badge";
 
 const quickActions = [
   {
@@ -66,10 +67,11 @@ export default async function Dashboard() {
 
   const { user } = session;
 
-  const [classes, assignments, files] = await Promise.all([
+  const [classes, assignments, files, guestSessions] = await Promise.all([
     getClassesForUser(user.id, user.role as any),
     getAssignments(),
     getFiles(),
+    user.role === "teacher" ? getGuestSessionsForTeacher(user.id) : Promise.resolve([]),
   ]);
 
   const featuredClasses = classes.slice(0, 3);
@@ -223,6 +225,67 @@ export default async function Dashboard() {
             </CardContent>
           </Card>
 
+          {/* Guest Sessions Card - Only for teachers */}
+          {user.role === "teacher" && guestSessions.length > 0 && (
+            <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">
+                    👤 Giáo Viên Khách Mời
+                  </Badge>
+                  <CardTitle>Buổi Học Được Mời</CardTitle>
+                </div>
+                <CardDescription>
+                  Bạn được mời dạy thay {guestSessions.length} buổi học
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {guestSessions.slice(0, 3).map((session) => (
+                  <div
+                    key={session.sessionId}
+                    className="flex items-center justify-between rounded-xl border border-blue-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-900 truncate">
+                        {session.sessionTitle}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Lớp: {session.className}
+                      </p>
+                      <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          GV: {session.mainTeacherName}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {new Date(session.sessionDate).toLocaleDateString("vi-VN", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                    <Link href={`/classes/${session.classId}/sessions/${session.sessionId}`}>
+                      <Button size="sm" className="ml-2">
+                        Xem
+                      </Button>
+                    </Link>
+                  </div>
+                ))}
+                {guestSessions.length > 3 && (
+                  <Link href="/classes" className="block">
+                    <Button variant="outline" className="w-full mt-2">
+                      Xem tất cả {guestSessions.length} buổi học
+                    </Button>
+                  </Link>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle>Bài tập nổi bật</CardTitle>
@@ -255,8 +318,8 @@ export default async function Dashboard() {
                           <Calendar className="h-4 w-4" />
                           {assignment.dueDate
                             ? new Date(assignment.dueDate).toLocaleDateString(
-                                "vi-VN"
-                              )
+                              "vi-VN"
+                            )
                             : "Không hạn"}
                         </span>
                         <span>{assignment.maxScore ?? 100} điểm</span>

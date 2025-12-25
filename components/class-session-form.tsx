@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +13,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle } from "lucide-react";
 
@@ -25,6 +32,7 @@ interface ClassSessionFormProps {
     scheduledAt: Date;
     durationMinutes?: number;
     sessionNumber?: number;
+    guestTeacherId?: number | null;
   };
   onSuccess?: () => void;
 }
@@ -39,6 +47,7 @@ export function ClassSessionForm({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [teachers, setTeachers] = useState<Array<{ id: number; name: string; email: string }>>([]);
 
   const [formData, setFormData] = useState({
     title: initialData?.title || "",
@@ -48,7 +57,24 @@ export function ClassSessionForm({
       : "",
     durationMinutes: initialData?.durationMinutes || 60,
     sessionNumber: initialData?.sessionNumber || 1,
+    guestTeacherId: initialData?.guestTeacherId?.toString() || "",
   });
+
+  useEffect(() => {
+    fetchTeachers();
+  }, []);
+
+  const fetchTeachers = async () => {
+    try {
+      const res = await fetch("/api/admin/teachers");
+      if (res.ok) {
+        const data = await res.json();
+        setTeachers(data.teachers || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch teachers:", error);
+    }
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -83,6 +109,7 @@ export function ClassSessionForm({
           classId,
           ...formData,
           scheduledAt: new Date(formData.scheduledAt),
+          guestTeacherId: formData.guestTeacherId ? parseInt(formData.guestTeacherId) : null,
         }),
       });
 
@@ -190,6 +217,32 @@ export function ClassSessionForm({
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="guestTeacherId">Giáo Viên Thay Thế (Tùy chọn)</Label>
+            <Select
+              value={formData.guestTeacherId || "none"}
+              onValueChange={(value) =>
+                setFormData({ ...formData, guestTeacherId: value === "none" ? "" : value })
+              }
+              disabled={isLoading}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Chọn giáo viên (nếu cần)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Không có</SelectItem>
+                {teachers.map((teacher) => (
+                  <SelectItem key={teacher.id} value={teacher.id.toString()}>
+                    {teacher.name} ({teacher.email})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-500">
+              Giáo viên thay thế có thể vào lớp cho buổi học này
+            </p>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="description">Mô Tả</Label>
             <Textarea
               id="description"
@@ -211,8 +264,8 @@ export function ClassSessionForm({
             {isLoading
               ? "Đang lưu..."
               : sessionId
-              ? "Cập Nhật Buổi Học"
-              : "Tạo Buổi Học"}
+                ? "Cập Nhật Buổi Học"
+                : "Tạo Buổi Học"}
           </Button>
         </form>
       </CardContent>

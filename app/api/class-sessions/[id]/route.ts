@@ -39,6 +39,7 @@ export async function PATCH(
       scheduledAt: body.scheduledAt ? new Date(body.scheduledAt) : undefined,
       status: body.status,
       durationMinutes: body.durationMinutes,
+      guestTeacherId: body.guestTeacherId !== undefined ? body.guestTeacherId : undefined,
     });
 
     if (!result.success) {

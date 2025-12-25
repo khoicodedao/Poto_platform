@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
-import { getClassesForUser } from "@/lib/actions/classes";
+import { getClassesForUser, getGuestSessionsForTeacher } from "@/lib/actions/classes";
 import { redirect } from "next/navigation";
 
 import { CustomBreadcrumb } from "@/components/custom-breadcrumb";
@@ -34,6 +34,11 @@ export default async function ClassesPage() {
   }
 
   const classes = await getClassesForUser(user.id, user.role as any);
+
+  // Fetch guest sessions for teachers
+  const guestSessions = user.role === "teacher"
+    ? await getGuestSessionsForTeacher(user.id)
+    : [];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -133,6 +138,73 @@ export default async function ClassesPage() {
             </Card>
           ))}
         </div>
+
+        {/* Guest Sessions Section - Only for teachers with guest assignments */}
+        {user.role === "teacher" && guestSessions.length > 0 && (
+          <div className="mt-12">
+            <div className="mb-6 flex items-center gap-3">
+              <Badge variant="outline" className="text-base px-3 py-1 bg-blue-50 border-blue-300">
+                👤 Giáo Viên Khách Mời
+              </Badge>
+              <h3 className="text-2xl font-bold text-gray-900">
+                Buổi Học Được Mời
+              </h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {guestSessions.map((session) => (
+                <Card
+                  key={session.sessionId}
+                  className="border-blue-200 hover:shadow-lg transition-shadow"
+                >
+                  <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                    <CardTitle className="text-lg">{session.sessionTitle}</CardTitle>
+                    <CardDescription>Lớp: {session.className}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-4">
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center text-gray-600">
+                        <Users className="h-4 w-4 mr-2 flex-shrink-0" />
+                        <span>GV chính: {session.mainTeacherName}</span>
+                      </div>
+                      <div className="flex items-center text-gray-600">
+                        <Calendar className="h-4 w-4 mr-2 flex-shrink-0" />
+                        <span>
+                          {new Date(session.sessionDate).toLocaleString("vi-VN", {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          })}
+                        </span>
+                      </div>
+                      <div>
+                        <Badge
+                          variant={
+                            session.status === "completed" ? "secondary" : "default"
+                          }
+                          className="mt-2"
+                        >
+                          {session.status === "completed"
+                            ? "Đã kết thúc"
+                            : session.status === "in-progress"
+                              ? "Đang diễn ra"
+                              : "Sắp diễn ra"}
+                        </Badge>
+                      </div>
+                    </div>
+                    <Link
+                      href={`/classes/${session.classId}/sessions/${session.sessionId}`}
+                      className="block mt-4"
+                    >
+                      <Button className="w-full" size="sm">
+                        <Video className="h-4 w-4 mr-2" />
+                        Tham gia buổi học
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Empty State */}
         {classes.length === 0 && (

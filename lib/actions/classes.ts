@@ -301,11 +301,11 @@ export async function getClassDetail(
     updatedAt: classRow.updatedAt,
     teacher: classRow.teacherId
       ? {
-          id: classRow.teacherId,
-          name: classRow.teacherName ?? "Chưa cập nhật",
-          email: classRow.teacherEmail ?? null,
-          avatar: classRow.teacherAvatar ?? null,
-        }
+        id: classRow.teacherId,
+        name: classRow.teacherName ?? "Chưa cập nhật",
+        email: classRow.teacherEmail ?? null,
+        avatar: classRow.teacherAvatar ?? null,
+      }
       : null,
     students,
     assignments: classAssignments,
@@ -422,8 +422,8 @@ export async function getClassesForUser(
     typeof rawUserId === "string"
       ? Number.parseInt(rawUserId, 10)
       : typeof rawUserId === "number"
-      ? rawUserId
-      : null;
+        ? rawUserId
+        : null;
 
   // Nếu không có userId hợp lệ → trả mảng rỗng (tránh query lỗi)
   if (!userId) {
@@ -463,4 +463,26 @@ export async function getClassesForUser(
   return await baseSelect.where(eq(classEnrollments.studentId, userId));
 }
 
+// Get sessions where user is guest teacher
+export async function getGuestSessionsForTeacher(userId: number) {
+  const { classSessions } = await import("@/db/schema");
+
+  const guestSessions = await db
+    .select({
+      sessionId: classSessions.id,
+      sessionTitle: classSessions.title,
+      sessionDate: classSessions.scheduledAt,
+      classId: classes.id,
+      className: classes.name,
+      mainTeacherName: users.name,
+      status: classSessions.status,
+    })
+    .from(classSessions)
+    .innerJoin(classes, eq(classSessions.classId, classes.id))
+    .innerJoin(users, eq(classes.teacherId, users.id))
+    .where(eq(classSessions.guestTeacherId, userId))
+    .orderBy(classSessions.scheduledAt);
+
+  return guestSessions;
+}
 

@@ -84,6 +84,7 @@ export const classEnrollments = pgTable("class_enrollments", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   enrolledAt: timestamp("enrolled_at").defaultNow().notNull(),
+  endDate: timestamp("end_date"), // Optional expiry date for enrollment
 });
 
 export const assignments = pgTable("assignments", {
@@ -192,6 +193,9 @@ export const classSessions = pgTable("class_sessions", {
   createdBy: integer("created_by")
     .notNull()
     .references(() => users.id, { onDelete: "restrict" }),
+  guestTeacherId: integer("guest_teacher_id").references(() => users.id, {
+    onDelete: "set null",
+  }), // Optional substitute teacher for this session
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

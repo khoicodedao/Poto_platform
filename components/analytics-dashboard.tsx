@@ -44,7 +44,7 @@ export function ClassPerformanceDashboard({ classId }: { classId: number }) {
     useAttendanceTrends(classId);
 
   if (perfLoading) {
-    return <div className="text-center py-8">Loading analytics...</div>;
+    return <div className="text-center py-8">Đang tải dữ liệu phân tích...</div>;
   }
 
   if (perfError) {
@@ -61,7 +61,7 @@ export function ClassPerformanceDashboard({ classId }: { classId: number }) {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Average Score</CardTitle>
+            <CardTitle className="text-sm font-medium">Điểm trung bình</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -69,7 +69,7 @@ export function ClassPerformanceDashboard({ classId }: { classId: number }) {
               <span className="text-sm font-normal text-gray-500">/100</span>
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              {perfData?.assignments?.totalAssignments || 0} assignments
+              {perfData?.assignments?.totalAssignments || 0} bài tập
             </p>
           </CardContent>
         </Card>
@@ -77,7 +77,7 @@ export function ClassPerformanceDashboard({ classId }: { classId: number }) {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">
-              Submission Rate
+              Tỷ lệ nộp bài
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -85,7 +85,7 @@ export function ClassPerformanceDashboard({ classId }: { classId: number }) {
               {Number(perfData?.assignments?.submissionRate || 0).toFixed(1)}%
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              {perfData?.assignments?.totalSubmissions || 0} submissions
+              {perfData?.assignments?.totalSubmissions || 0} bài nộp
             </p>
           </CardContent>
         </Card>
@@ -93,7 +93,7 @@ export function ClassPerformanceDashboard({ classId }: { classId: number }) {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">
-              Attendance Rate
+              Tỷ lệ điểm danh
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -101,20 +101,20 @@ export function ClassPerformanceDashboard({ classId }: { classId: number }) {
               {Number(perfData?.attendance?.averageAttendance || 0).toFixed(1)}%
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              {perfData?.attendance?.totalSessions || 0} sessions
+              {perfData?.attendance?.totalSessions || 0} buổi học
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Late Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">Tỷ lệ đi trễ</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {Number(perfData?.attendance?.lateRate || 0).toFixed(1)}%
             </div>
-            <p className="text-xs text-gray-500 mt-1">Students arriving late</p>
+            <p className="text-xs text-gray-500 mt-1">Học viên đi trễ</p>
           </CardContent>
         </Card>
       </div>
@@ -123,9 +123,9 @@ export function ClassPerformanceDashboard({ classId }: { classId: number }) {
       {!timelineLoading && timelineData && (
         <Card>
           <CardHeader>
-            <CardTitle>Submission Timeline (Last 30 Days)</CardTitle>
+            <CardTitle>Biểu đồ nộp bài (30 ngày qua)</CardTitle>
             <CardDescription>
-              Daily submission count and average score trend
+              Số lượng bài nộp và xu hướng điểm trung bình
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -140,13 +140,13 @@ export function ClassPerformanceDashboard({ classId }: { classId: number }) {
                   type="monotone"
                   dataKey="submissionCount"
                   stroke="#3b82f6"
-                  name="Submissions"
+                  name="Bài nộp"
                 />
                 <Line
                   type="monotone"
                   dataKey="averageScore"
                   stroke="#10b981"
-                  name="Avg Score"
+                  name="Điểm TB"
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -158,8 +158,8 @@ export function ClassPerformanceDashboard({ classId }: { classId: number }) {
       {!attendanceLoading && attendanceData && (
         <Card>
           <CardHeader>
-            <CardTitle>Attendance Trends</CardTitle>
-            <CardDescription>Per session attendance breakdown</CardDescription>
+            <CardTitle>Xu hướng điểm danh</CardTitle>
+            <CardDescription>Thống kê điểm danh theo buổi học</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -178,19 +178,19 @@ export function ClassPerformanceDashboard({ classId }: { classId: number }) {
                   dataKey="presentCount"
                   stackId="a"
                   fill="#10b981"
-                  name="Present"
+                  name="Có mặt"
                 />
                 <Bar
                   dataKey="lateCount"
                   stackId="a"
                   fill="#f59e0b"
-                  name="Late"
+                  name="Trễ"
                 />
                 <Bar
                   dataKey="absentCount"
                   stackId="a"
                   fill="#ef4444"
-                  name="Absent"
+                  name="Vắng"
                 />
               </BarChart>
             </ResponsiveContainer>
@@ -217,7 +217,7 @@ export function StudentDashboard({
   });
 
   if (loading) {
-    return <div className="text-center py-8">Loading your analytics...</div>;
+    return <div className="text-center py-8">Đang tải dữ liệu của bạn...</div>;
   }
 
   return (
@@ -226,7 +226,7 @@ export function StudentDashboard({
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">
-              Your Average Score
+              Điểm trung bình của bạn
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -234,35 +234,35 @@ export function StudentDashboard({
               {Number(perfData?.overallScore || 0).toFixed(1)}%
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              {perfData?.assignments?.submittedCount || 0} submitted
+              {perfData?.assignments?.submittedCount || 0} đã nộp
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Attendance</CardTitle>
+            <CardTitle className="text-sm font-medium">Điểm danh</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {perfData?.attendanceRate}%
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              {perfData?.attendance?.presentCount || 0} classes attended
+              {perfData?.attendance?.presentCount || 0} buổi tham gia
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Assignments</CardTitle>
+            <CardTitle className="text-sm font-medium">Bài tập</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {perfData?.assignments?.gradedCount || 0}/
               {perfData?.assignments?.totalAssignments || 0}
             </div>
-            <p className="text-xs text-gray-500 mt-1">Graded</p>
+            <p className="text-xs text-gray-500 mt-1">Đã chấm</p>
           </CardContent>
         </Card>
       </div>
@@ -287,7 +287,7 @@ export function AtRiskStudentsAlert({ classId }: { classId: number }) {
   if (!atRiskData || atRiskData.length === 0) {
     return (
       <Alert className="bg-green-50 border-green-200">
-        <AlertDescription>All students are doing well!</AlertDescription>
+        <AlertDescription>Tất cả học viên đều học tốt!</AlertDescription>
       </Alert>
     );
   }
@@ -295,7 +295,7 @@ export function AtRiskStudentsAlert({ classId }: { classId: number }) {
   return (
     <Alert className="bg-red-50 border-red-200">
       <AlertDescription>
-        <strong>{atRiskData.length} students</strong> need attention:
+        <strong>{atRiskData.length} học viên</strong> cần chú ý:
         <ul className="mt-2 space-y-1">
           {atRiskData.map((student: any) => (
             <li key={student.studentId} className="text-sm">

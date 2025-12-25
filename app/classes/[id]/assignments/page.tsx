@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { useState, useEffect } from "react";
 import { AssignmentScheduleForm } from "@/components/assignment-schedule-form";
 import { AssignmentList } from "@/components/assignment-list";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,6 +12,25 @@ import { ArrowLeft, BookOpen, FileText, Plus } from "lucide-react";
 export default function ClassAssignmentsPage() {
   const params = useParams();
   const classId = parseInt(params.id as string);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchUserRole();
+  }, []);
+
+  const fetchUserRole = async () => {
+    try {
+      const res = await fetch("/api/auth/me");
+      if (res.ok) {
+        const data = await res.json();
+        setUserRole(data.user?.role || null);
+      }
+    } catch (e) {
+      console.error("Failed to fetch user role:", e);
+    }
+  };
+
+  const isTeacher = userRole && userRole !== "student";
 
   return (
     <div className="container mx-auto p-6 pt-24 space-y-6 animate-in fade-in duration-500">
@@ -26,12 +46,12 @@ export default function ClassAssignmentsPage() {
                 <BookOpen className="w-6 h-6 text-white" />
               </div>
               <h1 className="text-3xl font-bold text-white drop-shadow-lg">
-                Quản Lý Bài Tập
+                {isTeacher ? "Quản Lý Bài Tập" : "Bài Tập"}
               </h1>
             </div>
             <p className="text-white/90 text-lg font-medium flex items-center gap-2">
               <FileText className="w-4 h-4" />
-              Tạo và quản lý bài tập cho lớp học
+              {isTeacher ? "Tạo và quản lý bài tập cho lớp học" : "Danh sách bài tập của lớp học"}
             </p>
           </div>
 
@@ -48,26 +68,34 @@ export default function ClassAssignmentsPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="list" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="list" className="flex items-center gap-2">
-            <FileText className="w-4 h-4" />
-            Danh Sách Bài Tập
-          </TabsTrigger>
-          <TabsTrigger value="create" className="flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            Tạo Bài Tập Mới
-          </TabsTrigger>
-        </TabsList>
+      {isTeacher ? (
+        // Teacher view - full management
+        <Tabs defaultValue="list" className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="list" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Danh Sách Bài Tập
+            </TabsTrigger>
+            <TabsTrigger value="create" className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Tạo Bài Tập Mới
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="list" className="mt-6">
-          <AssignmentList classId={classId} isTeacher={true} />
-        </TabsContent>
+          <TabsContent value="list" className="mt-6">
+            <AssignmentList classId={classId} isTeacher={true} />
+          </TabsContent>
 
-        <TabsContent value="create" className="mt-6">
-          <AssignmentScheduleForm classId={classId} />
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="create" className="mt-6">
+            <AssignmentScheduleForm classId={classId} />
+          </TabsContent>
+        </Tabs>
+      ) : (
+        // Student view - only see list
+        <div className="mt-6">
+          <AssignmentList classId={classId} isTeacher={false} />
+        </div>
+      )}
     </div>
   );
 }

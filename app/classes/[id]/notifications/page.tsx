@@ -17,7 +17,20 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
-import { ArrowLeft, Bell, MessageSquare } from "lucide-react";
+import {
+  ArrowLeft,
+  Bell,
+  MessageSquare,
+  Clock,
+  FileText,
+  BarChart3,
+  CheckCircle,
+  MessagesSquare,
+  Smartphone,
+  Mail,
+  Zap,
+  Lightbulb
+} from "lucide-react";
 
 export default function ClassNotificationsPage() {
   const params = useParams();
@@ -200,51 +213,137 @@ export default function ClassNotificationsPage() {
           </form>
         </Card>
 
-        <Card className="p-6 bg-gray-50">
-          <h2 className="text-xl font-bold mb-4">💡 Hướng Dẫn</h2>
-          <div className="space-y-4 text-sm text-gray-700">
-            <div>
-              <p className="font-semibold mb-1">🔔 Loại Thông Báo</p>
-              <ul className="list-disc list-inside space-y-1 text-xs">
-                <li>
-                  <strong>Nhắc Nhở:</strong> Nhắc về sự kiện sắp tới
-                </li>
-                <li>
-                  <strong>Bài Tập:</strong> Về bài tập được phát hành/hết hạn
-                </li>
-                <li>
-                  <strong>Báo Cáo:</strong> Kết quả học tập hoặc điểm danh
-                </li>
-                <li>
-                  <strong>Điểm Danh:</strong> Thông báo liên quan tới điểm danh
-                </li>
-                <li>
-                  <strong>Thông Báo Chung:</strong> Các thông báo khác
-                </li>
-              </ul>
+        {/* Enhanced Guide Section */}
+        <div className="space-y-4">
+          {/* Guide Header Card */}
+          <Card className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg">
+                <Lightbulb className="w-6 h-6 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                Hướng Dẫn Sử Dụng
+              </h2>
             </div>
+            <p className="text-gray-600 text-sm leading-relaxed">
+              Gửi thông báo nhanh chóng đến tất cả học sinh qua nhiều kênh khác nhau
+            </p>
+          </Card>
 
-            <div>
-              <p className="font-semibold mb-1">📱 Kênh Gửi</p>
-              <ul className="list-disc list-inside space-y-1 text-xs">
-                <li>
-                  <strong>Ứng Dụng:</strong> Gửi qua ứng dụng di động
-                </li>
-                <li>
-                  <strong>Zalo:</strong> Gửi tin nhắn trực tiếp trên Zalo
-                </li>
-                <li>
-                  <strong>Email:</strong> Gửi email đến địa chỉ email
-                </li>
-              </ul>
-            </div>
+          {/* Types of Notifications */}
+          <Card className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200">
+            <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-purple-700">
+              <Bell className="w-5 h-5" />
+              Loại Thông Báo
+            </h3>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-3 bg-white/60 rounded-lg transition-all hover:bg-white hover:shadow-md">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <Clock className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-800">Nhắc Nhở</p>
+                  <p className="text-xs text-gray-600">Nhắc về sự kiện sắp tới</p>
+                </div>
+              </div>
 
-            <div className="p-3 bg-blue-100 rounded border border-blue-200 text-xs">
-              💡 <strong>Mẹo:</strong> Kích chọn "Gửi qua nhóm Zalo" để đảm bảo
-              tất cả học sinh nhận được thông báo ngay lập tức.
+              <div className="flex items-start gap-3 p-3 bg-white/60 rounded-lg transition-all hover:bg-white hover:shadow-md">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <FileText className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-800">Bài Tập</p>
+                  <p className="text-xs text-gray-600">Về bài tập được phát hành/hết hạn</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 bg-white/60 rounded-lg transition-all hover:bg-white hover:shadow-md">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <BarChart3 className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-800">Báo Cáo</p>
+                  <p className="text-xs text-gray-600">Kết quả học tập hoặc điểm danh</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 bg-white/60 rounded-lg transition-all hover:bg-white hover:shadow-md">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <CheckCircle className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-800">Điểm Danh</p>
+                  <p className="text-xs text-gray-600">Thông báo liên quan tới điểm danh</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 bg-white/60 rounded-lg transition-all hover:bg-white hover:shadow-md">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <MessagesSquare className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-800">Thông Báo Chung</p>
+                  <p className="text-xs text-gray-600">Các thông báo khác</p>
+                </div>
+              </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+
+          {/* Channels */}
+          <Card className="p-6 bg-gradient-to-br from-green-50 to-teal-50 border-2 border-green-200">
+            <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-green-700">
+              <Smartphone className="w-5 h-5" />
+              Kênh Gửi
+            </h3>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-3 bg-white/60 rounded-lg transition-all hover:bg-white hover:shadow-md">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <Smartphone className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-800">Ứng Dụng</p>
+                  <p className="text-xs text-gray-600">Gửi qua ứng dụng di động</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 bg-white/60 rounded-lg transition-all hover:bg-white hover:shadow-md">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <MessageSquare className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-800">Zalo</p>
+                  <p className="text-xs text-gray-600">Gửi tin nhắn trực tiếp trên Zalo</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 bg-white/60 rounded-lg transition-all hover:bg-white hover:shadow-md">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <Mail className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-800">Email</p>
+                  <p className="text-xs text-gray-600">Gửi email đến địa chỉ email</p>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* Pro Tip */}
+          <Card className="p-5 bg-gradient-to-br from-amber-50 to-yellow-50 border-2 border-amber-300 shadow-lg">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center flex-shrink-0 shadow-md">
+                <Zap className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="font-bold text-amber-800 mb-1">Mẹo Quan Trọng</p>
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  Kích chọn <span className="font-semibold text-amber-700">"Gửi thêm vào nhóm Zalo"</span> để đảm bảo
+                  tất cả học sinh nhận được thông báo ngay lập tức và có thể thảo luận chung.
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
     </div>
   );

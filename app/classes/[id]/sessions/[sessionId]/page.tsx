@@ -49,14 +49,37 @@ export default function SessionDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [className, setClassName] = useState<string>("");
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [isUnauthenticated, setIsUnauthenticated] = useState(false);
 
   useEffect(() => {
+    fetchUserInfo();
     fetchSessionData();
     fetchClassStudents();
     fetchFeedbacks();
     fetchClassDetails();
     fetchAttendanceCount();
   }, [sessionId, classId]);
+
+  const fetchUserInfo = async () => {
+    try {
+      const res = await fetch("/api/auth/me");
+      if (res.status === 401) {
+        // User is not authenticated
+        console.warn("User is not authenticated - 401");
+        setIsUnauthenticated(true);
+        return;
+      }
+      if (res.ok) {
+        const data = await res.json();
+        setUserRole(data.user?.role || null);
+        setCurrentUserId(data.user?.id || null);
+      }
+    } catch (e) {
+      console.error("Failed to fetch user info:", e);
+    }
+  };
 
   const fetchSessionData = async () => {
     try {
@@ -221,140 +244,221 @@ export default function SessionDetailPage() {
         </Card>
       </div>
 
-      <Tabs defaultValue="attendance" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="attendance">Điểm Danh</TabsTrigger>
-          <TabsTrigger value="feedback">Nhận Xét</TabsTrigger>
-          <TabsTrigger value="report">Báo Cáo</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="attendance" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Điểm Danh Học Sinh</CardTitle>
-              <CardDescription>
-                Đánh dấu sự tham gia của học sinh trong buổi học
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {students.length > 0 ? (
-                <AttendanceChecklist
-                  sessionId={sessionId}
-                  students={students.map((s) => ({
-                    id: s.studentId,
-                    name: s.name || "Học sinh",
-                    email: s.email || "",
-                  }))}
-                  onSubmit={() => fetchAttendanceCount()}
-                />
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <p>Chưa có dữ liệu học sinh để điểm danh</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="feedback">
-          <div className="space-y-4">
-            {students.length === 0 && (
-              <Card>
-                <CardContent className="text-center text-gray-500">
-                  Chưa có học sinh để nhận xét
-                </CardContent>
-              </Card>
-            )}
-
-            {students.map((s) => (
-              <div key={s.studentId} className="flex items-center gap-4">
-                <div className="flex-1">
-                  <p className="font-medium">{s.name}</p>
-                  <p className="text-sm text-gray-500">{s.email}</p>
-                </div>
-                <div>
-                  <Button
-                    onClick={() => {
-                      setSelectedStudentId(s.studentId);
-                      setSelectedStudentName(s.name || "Học sinh");
-                    }}
-                  >
-                    Nhận Xét
-                  </Button>
-                </div>
-              </div>
-            ))}
-
-            {selectedStudentId && (
-              <StudentFeedbackForm
-                sessionId={sessionId}
-                studentId={selectedStudentId}
-                studentName={selectedStudentName}
-                onSuccess={() => {
-                  setSelectedStudentId(null);
-                  // refresh feedback list after successful save
-                  fetchFeedbacks();
-                }}
-              />
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="report">
-          <div className="space-y-4">
-            <ClassReportForm
-              sessionId={sessionId}
-              totalStudents={students.length}
-              attendanceCount={attendanceCount}
-              onSuccess={() => {
-                // optionally refresh reports or notify
-              }}
-            />
-          </div>
-        </TabsContent>
-      </Tabs>
-
-      {/* Feedback list */}
-      <div className="mt-6">
+      {/* Show login prompt if unauthenticated */}
+      {isUnauthenticated ? (
+        <Card className="mt-6 border-red-300">
+          <CardContent className="py-8">
+            <div className="text-center">
+              <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-red-700 mb-2">
+                Bạn chưa đăng nhập
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Vui lòng đăng nhập để xem nội dung buổi học
+              </p>
+              <a
+                href="/auth/signin"
+                className="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Đăng nhập
+              </a>
+            </div>
+          </CardContent>
+        </Card>
+      ) : !userRole ? (
+        <Card className="mt-6">
+          <CardContent className="py-8">
+            <div className="text-center text-gray-500">Đang tải thông tin người dùng...</div>
+          </CardContent>
+        </Card>
+      ) : userRole === 'student' ? (
+        // Student view - only see their own feedback
         <Card>
           <CardHeader>
-            <CardTitle>Nhận xét đã lưu</CardTitle>
+            <CardTitle>Nhận xét của bạn</CardTitle>
             <CardDescription>
-              Danh sách nhận xét cho buổi học này
+              Các nhận xét từ giáo viên về buổi học này
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {feedbacks.length === 0 ? (
-              <div className="text-gray-500">Chưa có nhận xét nào</div>
+            {feedbacks.filter(f => f.studentId === currentUserId).length === 0 ? (
+              <div className="text-gray-500 text-center py-8">
+                Chưa có nhận xét nào cho bạn trong buổi học này
+              </div>
             ) : (
               <div className="space-y-4">
-                {feedbacks.map((f: any) => {
-                  const studentName =
-                    students.find((s) => s.studentId === f.studentId)?.name ||
-                    "Học sinh";
-                  return (
-                    <div key={f.id} className="p-4 border rounded">
+                {feedbacks
+                  .filter(f => f.studentId === currentUserId)
+                  .map((f: any) => (
+                    <div key={f.id} className="p-4 border rounded-lg bg-gradient-to-r from-blue-50 to-purple-50">
                       <div className="flex justify-between items-center mb-2">
-                        <div className="font-medium">{studentName}</div>
+                        <div className="font-medium text-purple-700">Nhận xét của giáo viên</div>
                         <div className="text-sm text-gray-500">
                           {new Date(f.createdAt).toLocaleString("vi-VN")}
                         </div>
                       </div>
-                      <div className="text-sm text-gray-800 mb-2">
+                      <div className="text-sm text-gray-800 mb-2 leading-relaxed">
                         {f.feedbackText}
                       </div>
-                      <div className="text-xs text-gray-600">
-                        Điểm thái độ: {f.attitudeScore ?? "-"} • Mức độ:{" "}
-                        {f.participationLevel}
+                      <div className="flex gap-4 text-xs text-gray-600">
+                        {f.attitudeScore && (
+                          <div className="flex items-center gap-1">
+                            <span className="font-semibold">Điểm thái độ:</span>
+                            <span className="text-blue-600 font-bold">{f.attitudeScore}/10</span>
+                          </div>
+                        )}
+                        {f.participationLevel && (
+                          <div className="flex items-center gap-1">
+                            <span className="font-semibold">Mức độ tham gia:</span>
+                            <span className="text-purple-600 font-bold capitalize">{f.participationLevel}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  );
-                })}
+                  ))}
               </div>
             )}
           </CardContent>
         </Card>
-      </div>
+      ) : (
+        // Teacher/Admin view - full management features
+        <Tabs defaultValue="attendance" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="attendance">Điểm Danh</TabsTrigger>
+            <TabsTrigger value="feedback">Nhận Xét</TabsTrigger>
+            <TabsTrigger value="report">Báo Cáo</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="attendance" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Điểm Danh Học Sinh</CardTitle>
+                <CardDescription>
+                  Đánh dấu sự tham gia của học sinh trong buổi học
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {students.length > 0 ? (
+                  <AttendanceChecklist
+                    sessionId={sessionId}
+                    students={students.map((s) => ({
+                      id: s.studentId,
+                      name: s.name || "Học sinh",
+                      email: s.email || "",
+                    }))}
+                    onSubmit={() => fetchAttendanceCount()}
+                  />
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>Chưa có dữ liệu học sinh để điểm danh</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="feedback">
+            <div className="space-y-4">
+              {students.length === 0 && (
+                <Card>
+                  <CardContent className="text-center text-gray-500">
+                    Chưa có học sinh để nhận xét
+                  </CardContent>
+                </Card>
+              )}
+
+              {students.map((s) => (
+                <div key={s.studentId} className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <p className="font-medium">{s.name}</p>
+                    <p className="text-sm text-gray-500">{s.email}</p>
+                  </div>
+                  <div>
+                    <Button
+                      onClick={() => {
+                        setSelectedStudentId(s.studentId);
+                        setSelectedStudentName(s.name || "Học sinh");
+                      }}
+                    >
+                      Nhận Xét
+                    </Button>
+                  </div>
+                </div>
+              ))}
+
+              {selectedStudentId && (
+                <StudentFeedbackForm
+                  sessionId={sessionId}
+                  studentId={selectedStudentId}
+                  studentName={selectedStudentName}
+                  onSuccess={() => {
+                    setSelectedStudentId(null);
+                    // refresh feedback list after successful save
+                    fetchFeedbacks();
+                  }}
+                />
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="report">
+            <div className="space-y-4">
+              <ClassReportForm
+                sessionId={sessionId}
+                totalStudents={students.length}
+                attendanceCount={attendanceCount}
+                onSuccess={() => {
+                  // optionally refresh reports or notify
+                }}
+              />
+            </div>
+          </TabsContent>
+        </Tabs>
+      )}
+
+      {/* Feedback list - only for teachers/admins */}
+      {userRole && userRole !== 'student' && (
+        <div className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Nhận xét đã lưu</CardTitle>
+              <CardDescription>
+                Danh sách nhận xét cho buổi học này
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {feedbacks.length === 0 ? (
+                <div className="text-gray-500">Chưa có nhận xét nào</div>
+              ) : (
+                <div className="space-y-4">
+                  {feedbacks.map((f: any) => {
+                    const studentName =
+                      students.find((s) => s.studentId === f.studentId)?.name ||
+                      "Học sinh";
+                    return (
+                      <div key={f.id} className="p-4 border rounded">
+                        <div className="flex justify-between items-center mb-2">
+                          <div className="font-medium">{studentName}</div>
+                          <div className="text-sm text-gray-500">
+                            {new Date(f.createdAt).toLocaleString("vi-VN")}
+                          </div>
+                        </div>
+                        <div className="text-sm text-gray-800 mb-2">
+                          {f.feedbackText}
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          Điểm thái độ: {f.attitudeScore ?? "-"} • Mức độ:{" "}
+                          {f.participationLevel}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
