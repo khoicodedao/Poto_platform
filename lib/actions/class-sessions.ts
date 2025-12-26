@@ -9,7 +9,7 @@ import {
   classEnrollments,
   users,
 } from "@/db/schema";
-import { eq, and, gte, lte, desc } from "drizzle-orm";
+import { eq, and, gte, lte, desc, or } from "drizzle-orm";
 import { getCurrentSession } from "@/lib/auth";
 import { createNotification } from "@/lib/actions/notifications";
 
@@ -247,8 +247,7 @@ export async function addStudentFeedback(data: {
   sessionId: number;
   studentId: number;
   feedbackText: string;
-  attitudeScore?: number;
-  participationLevel?: "high" | "medium" | "low";
+  rating?: number;
 }) {
   try {
     const session = await getCurrentSession();
@@ -262,8 +261,7 @@ export async function addStudentFeedback(data: {
         .update(studentFeedbacks)
         .set({
           feedbackText: data.feedbackText,
-          attitudeScore: data.attitudeScore,
-          participationLevel: data.participationLevel,
+          rating: data.rating,
           updatedAt: new Date(),
           createdBy: session.user.id,
         })
@@ -305,8 +303,8 @@ export async function addStudentFeedback(data: {
 
       await createNotification({
         type: "report",
-        title: "Bạn có nhận xét mới",
-        message: data.feedbackText || "Giáo viên đã gửi nhận xét cho bạn.",
+        title: "Bạn có đánh giá mới",
+        message: data.feedbackText || "Giáo viên đã gửi đánh giá cho bạn.",
         recipientId: data.studentId,
         classId: classId ?? 0,
         relatedSessionId: data.sessionId,
@@ -494,6 +492,104 @@ export async function getSessionReport(sessionId: number) {
   }
 }
 
+// === HELPER: Get upcoming sessions (within next 24 hours) ===
+
+export async function getUpcomingSessions(userId: number, userRole: string) {
+  try {
+    const now = new Date();
+    const next24Hours = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+    // Get all sessions scheduled in the next 24 hours
+    const sessions = await db
+      .select({
+        sessionId: classSessions.id,
+        sessionTitle: classSessions.title,
+        classId: classSessions.classId,
+        scheduledAt: classSessions.scheduledAt,
+        durationMinutes: classSessions.durationMinutes,
+        status: classSessions.status,
+        description: classSessions.description,
+      })
+      .from(classSessions)
+      .where(
+        and(
+          gte(classSessions.scheduledAt, now),
+          lte(classSessions.scheduledAt, next24Hours)
+        )
+      )
+      .orderBy(classSessions.scheduledAt);
+
+    return {
+      success: true,
+      data: sessions,
+    };
+  } catch (error) {
+    console.error("Error fetching upcoming sessions:", error);
+    return { success: false, error: String(error) };
+  }
+}
+
+// === HELPER: Get imminent sessions (in-progress or starting within next 15 minutes) ===
+
+export async function getImminentSessions(userId: number, userRole: string) {
+  try {
+    const now = new Date();
+    const next15Minutes = new Date(now.getTime() + 15 * 60 * 1000);
+
+    // Get all sessions that are either:
+    // 1. Currently in progress (started but not ended yet)
+    // 2. Starting in the next 15 minutes
+    const sessions = await db
+      .select({
+        sessionId: classSessions.id,
+        sessionTitle: classSessions.title,
+        classId: classSessions.classId,
+        scheduledAt: classSessions.scheduledAt,
+        durationMinutes: classSessions.durationMinutes,
+        status: classSessions.status,
+        description: classSessions.description,
+      })
+      .from(classSessions)
+      .where(
+        // Get sessions that could potentially be in-progress or starting soon
+        lte(classSessions.scheduledAt, next15Minutes)
+      )
+      .orderBy(classSessions.scheduledAt);
+
+    // Filter in-memory to check if session is actually in-progress or imminent
+    const filteredSessions = sessions.filter(session => {
+      // Skip cancelled sessions
+      if (session.status === "cancelled") {
+        return false;
+      }
+
+      const sessionStart = new Date(session.scheduledAt);
+      const sessionEnd = new Date(sessionStart.getTime() + (session.durationMinutes || 60) * 60 * 1000);
+
+      // Include if:
+      // 1. Session is currently in progress
+      if (now >= sessionStart && now < sessionEnd) {
+        return true;
+      }
+
+      // 2. Session starts within next 15 minutes
+      if (sessionStart >= now && sessionStart <= next15Minutes) {
+        return true;
+      }
+
+      return false;
+    });
+
+    return {
+      success: true,
+      data: filteredSessions,
+    };
+  } catch (error) {
+    console.error("Error fetching imminent sessions:", error);
+    return { success: false, error: String(error) };
+  }
+}
+
 // === HELPER: Get class students for attendance checklist ===
 
 export async function getClassStudentsForAttendance(classId: number) {
@@ -504,7 +600,6 @@ export async function getClassStudentsForAttendance(classId: number) {
         name: users.name,
         email: users.email,
         studentId: classEnrollments.studentId,
-        enrolledAt: classEnrollments.createdAt,
       })
       .from(classEnrollments)
       .innerJoin(users, eq(classEnrollments.studentId, users.id))

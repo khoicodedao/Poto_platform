@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
       relatedAssignmentId,
       sentVia,
       scheduledSendAt,
+      imageUrl,
     } = body;
 
     // Basic validation for required fields
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest) {
         relatedSessionId,
         relatedAssignmentId,
         sentVia,
+        imageUrl,
         scheduledSendAt: scheduledSendAt
           ? new Date(scheduledSendAt)
           : undefined,
@@ -80,6 +82,7 @@ export async function POST(req: NextRequest) {
         relatedSessionId,
         relatedAssignmentId,
         sentVia,
+        imageUrl,
         scheduledSendAt: scheduledSendAt
           ? new Date(scheduledSendAt)
           : undefined,

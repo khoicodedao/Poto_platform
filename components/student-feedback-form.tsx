@@ -5,13 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface StudentFeedbackFormProps {
@@ -21,8 +15,7 @@ interface StudentFeedbackFormProps {
   onSuccess?: () => void;
   initial?: {
     feedbackText?: string;
-    attitudeScore?: number;
-    participationLevel?: string;
+    rating?: number;
   } | null;
 }
 
@@ -37,17 +30,16 @@ export function StudentFeedbackForm({
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     feedbackText: "",
-    attitudeScore: 5,
-    participationLevel: "medium",
+    rating: 5,
   });
+  const [hoveredStar, setHoveredStar] = useState<number | null>(null);
 
   // populate when initial changes (edit mode)
   useEffect(() => {
     if (initial) {
       setFormData({
         feedbackText: initial.feedbackText || "",
-        attitudeScore: initial.attitudeScore ?? 5,
-        participationLevel: initial.participationLevel || "medium",
+        rating: initial.rating ?? 5,
       });
     }
   }, [initial]);
@@ -63,30 +55,29 @@ export function StudentFeedbackForm({
         body: JSON.stringify({
           sessionId,
           studentId,
-          ...formData,
-          attitudeScore: parseInt(formData.attitudeScore.toString()),
+          feedbackText: formData.feedbackText,
+          rating: formData.rating,
         }),
       });
 
       if (!response.ok) throw new Error("Failed to save feedback");
 
       toast({
-        title: "Success",
-        description: "Nhận xét được lưu thành công",
+        title: "Thành công",
+        description: "Đánh giá được lưu thành công",
       });
 
       setFormData({
         feedbackText: "",
-        attitudeScore: 5,
-        participationLevel: "medium",
+        rating: 5,
       });
 
       onSuccess?.();
     } catch (error) {
       toast({
-        title: "Error",
+        title: "Lỗi",
         description:
-          error instanceof Error ? error.message : "An error occurred",
+          error instanceof Error ? error.message : "Có lỗi xảy ra",
         variant: "destructive",
       });
     } finally {
@@ -94,63 +85,75 @@ export function StudentFeedbackForm({
     }
   };
 
+  const StarRating = () => {
+    const displayRating = hoveredStar !== null ? hoveredStar : formData.rating;
+
+    return (
+      <div className="flex items-center gap-2">
+        <div className="flex gap-1">
+          {[1, 2, 3, 4, 5].map((star) => (
+            <button
+              key={star}
+              type="button"
+              onClick={() => setFormData({ ...formData, rating: star })}
+              onMouseEnter={() => setHoveredStar(star)}
+              onMouseLeave={() => setHoveredStar(null)}
+              className="transition-all duration-200 hover:scale-125 focus:outline-none"
+            >
+              <Star
+                className={`w-8 h-8 ${star <= displayRating
+                    ? "fill-yellow-400 text-yellow-400"
+                    : "fill-gray-200 text-gray-300"
+                  } transition-colors duration-200`}
+              />
+            </button>
+          ))}
+        </div>
+        <span className="text-lg font-bold text-gray-700 ml-2">
+          {formData.rating}/5 sao
+        </span>
+      </div>
+    );
+  };
+
   return (
-    <Card className="p-6 mb-4">
-      <h3 className="text-lg font-bold mb-4">Nhận xét - {studentName}</h3>
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <Card className="p-6 mb-4 border-2 shadow-md">
+      <h3 className="text-lg font-bold mb-4 text-gray-800">
+        Đánh giá học sinh - {studentName}
+      </h3>
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <Label>Nhận xét</Label>
+          <Label className="text-base font-semibold mb-2 flex items-center gap-2">
+            <Star className="w-5 h-5 text-yellow-500" />
+            Xếp hạng
+          </Label>
+          <div className="mt-3">
+            <StarRating />
+          </div>
+          <p className="text-sm text-gray-500 mt-2">
+            Click vào sao để đánh giá (1 sao = Kém, 5 sao = Xuất sắc)
+          </p>
+        </div>
+
+        <div>
+          <Label className="text-base font-semibold">Nhận xét chi tiết</Label>
           <Textarea
             value={formData.feedbackText}
             onChange={(e) =>
               setFormData({ ...formData, feedbackText: e.target.value })
             }
-            placeholder="Viết nhận xét về học sinh..."
+            placeholder="Viết nhận xét về hiệu suất học tập, thái độ, mức độ tham gia của học sinh..."
+            className="mt-2 min-h-[120px]"
             required
           />
         </div>
 
-        <div>
-          <Label>Điểm Thái Độ (1-10)</Label>
-          <input
-            type="range"
-            min="1"
-            max="10"
-            value={formData.attitudeScore}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                attitudeScore: parseInt(e.target.value),
-              })
-            }
-            className="w-full"
-          />
-          <div className="text-center text-lg font-bold mt-2">
-            {formData.attitudeScore}/10
-          </div>
-        </div>
-
-        <div>
-          <Label>Mức Độ Tham Gia</Label>
-          <Select
-            value={formData.participationLevel}
-            onValueChange={(value) =>
-              setFormData({ ...formData, participationLevel: value })
-            }
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="high">Cao</SelectItem>
-              <SelectItem value="medium">Trung Bình</SelectItem>
-              <SelectItem value="low">Thấp</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <Button type="submit" disabled={isLoading} className="w-full">
-          {isLoading ? "Đang lưu..." : "Lưu Nhận Xét"}
+        <Button
+          type="submit"
+          disabled={isLoading}
+          className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 font-semibold"
+        >
+          {isLoading ? "Đang lưu..." : "Lưu Đánh Giá"}
         </Button>
       </form>
     </Card>

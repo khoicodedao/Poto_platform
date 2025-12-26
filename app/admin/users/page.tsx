@@ -48,7 +48,7 @@ interface User {
     id: number;
     email: string;
     name: string;
-    role: "student" | "teacher" | "admin";
+    role: "student" | "teacher" | "teaching_assistant" | "admin";
     isActive: boolean;
     createdAt: string;
 }
@@ -68,7 +68,7 @@ export default function AdminUsersPage() {
         email: "",
         password: "",
         name: "",
-        role: "student" as "student" | "teacher" | "admin",
+        role: "student" as "student" | "teacher" | "teaching_assistant" | "admin",
     });
 
     useEffect(() => {
@@ -207,6 +207,13 @@ export default function AdminUsersPage() {
                     <Badge className="bg-gradient-to-r from-purple-500 to-indigo-500">
                         <UserCheck className="w-3 h-3 mr-1" />
                         Giáo viên
+                    </Badge>
+                );
+            case "teaching_assistant":
+                return (
+                    <Badge className="bg-gradient-to-r from-purple-400 to-pink-400">
+                        <GraduationCap className="w-3 h-3 mr-1" />
+                        Trợ Giảng
                     </Badge>
                 );
             case "student":
@@ -400,6 +407,7 @@ export default function AdminUsersPage() {
                                 <SelectContent>
                                     <SelectItem value="student">Học Sinh</SelectItem>
                                     <SelectItem value="teacher">Giáo Viên</SelectItem>
+                                    <SelectItem value="teaching_assistant">Trợ Giảng</SelectItem>
                                     <SelectItem value="admin">Admin</SelectItem>
                                 </SelectContent>
                             </Select>

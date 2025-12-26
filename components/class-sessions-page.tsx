@@ -23,6 +23,7 @@ import {
   XCircle,
   Circle,
   Eye,
+  LogIn,
 } from "lucide-react";
 
 import {
@@ -43,6 +44,7 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import { ClassSessionForm } from "@/components/class-session-form";
+import { calculateSessionStatus } from "@/lib/utils/session-status";
 
 type ClassSession = {
   id: number;
@@ -301,7 +303,13 @@ export function ClassSessionsPage({
       ) : (
         <div className="space-y-4">
           {sessions.map((s, index) => {
-            const statusConfig = getStatusConfig(s.status);
+            // Calculate dynamic status based on current time
+            const dynamicStatus = calculateSessionStatus(
+              s.scheduledAt,
+              s.durationMinutes || 60,
+              s.status
+            );
+            const statusConfig = getStatusConfig(dynamicStatus);
             const StatusIcon = statusConfig.icon;
 
             return (
@@ -371,6 +379,16 @@ export function ClassSessionsPage({
 
                     {/* Action buttons */}
                     <div className="flex flex-col gap-2 min-w-fit">
+                      {/* Join Class Button - Only show when session is in-progress */}
+                      {dynamicStatus === "in-progress" && (
+                        <Link href={`/classroom/${classId}`}>
+                          <Button
+                            className="w-full bg-gradient-to-r from-red-500 to-red-500 text-white border-0 hover:from-red-600 hover:to-emerald-600 hover:shadow-xl hover:scale-110 transition-all duration-2000 font-bold animate-pulse shadow-lg shadow-red-500/50"
+                          >
+                            <LogIn className="mr-2 h-4 w-4" /> Vào Lớp Học
+                          </Button>
+                        </Link>
+                      )}
                       <Link href={`/classes/${classId}/sessions/${s.id}`}>
                         <Button
                           variant="outline"

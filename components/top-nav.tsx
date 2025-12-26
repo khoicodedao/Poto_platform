@@ -19,6 +19,8 @@ import {
   AlertTriangle,
   MessageSquare,
   FileCheck,
+  GraduationCap,
+  CalendarDays,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -147,6 +149,36 @@ export function TopNav({ user }: TopNavProps) {
                 </Link>
               );
             })}
+
+            {/* TA Links - Only for teaching_assistant and admin */}
+            {user && (user.role === "teaching_assistant" || user.role === "admin") && (
+              <>
+                <Link
+                  href="/ta/dashboard"
+                  className={clsx(
+                    "rounded-full px-4 py-1 transition flex items-center gap-2",
+                    pathname.startsWith("/ta/dashboard")
+                      ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
+                      : "text-gray-500 hover:text-gray-900"
+                  )}
+                >
+                  <GraduationCap className="h-4 w-4" />
+                  TA Dashboard
+                </Link>
+                <Link
+                  href="/ta/calendar"
+                  className={clsx(
+                    "rounded-full px-4 py-1 transition flex items-center gap-2",
+                    pathname.startsWith("/ta/calendar")
+                      ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
+                      : "text-gray-500 hover:text-gray-900"
+                  )}
+                >
+                  <CalendarDays className="h-4 w-4" />
+                  Lịch TA
+                </Link>
+              </>
+            )}
 
             {/* Admin Link - Only for admin */}
             {user && user.role === "admin" && (

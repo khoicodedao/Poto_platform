@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { name, description, teacherId, schedule, maxStudents } = body;
+        const { name, description, teacherId, teachingAssistantId, schedule, maxStudents } = body;
 
         if (!name || !teacherId) {
             return NextResponse.json(
@@ -108,11 +108,24 @@ export async function POST(request: NextRequest) {
                 name,
                 description: description || null,
                 teacherId,
+                teachingAssistantId: teachingAssistantId || null,
                 schedule: schedule || null,
                 maxStudents: maxStudents || 20,
                 isActive: true,
             })
             .returning();
+
+        // If TA assigned, create TA assignment automatically
+        if (teachingAssistantId) {
+            const { assignTAToClass } = await import("@/lib/actions/teaching-assistant");
+            await assignTAToClass({
+                userId: parseInt(teachingAssistantId),
+                classId: newClass.id,
+                canMarkAttendance: true,
+                canManageMaterials: true,
+                canManageSessions: true,
+            });
+        }
 
         return NextResponse.json({
             message: "Class created successfully",

@@ -12,7 +12,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Clock, Users } from "lucide-react";
+import { AlertCircle, Clock, Users, Star } from "lucide-react";
 import { AttendanceChecklist } from "@/components/attendance-checklist";
 import { StudentFeedbackForm } from "@/components/student-feedback-form";
 import { ClassReportForm } from "@/components/class-report-form";
@@ -275,47 +275,57 @@ export default function SessionDetailPage() {
         // Student view - only see their own feedback
         <Card>
           <CardHeader>
-            <CardTitle>Nhận xét của bạn</CardTitle>
+            <CardTitle>Đánh giá của bạn</CardTitle>
             <CardDescription>
-              Các nhận xét từ giáo viên về buổi học này
+              Đánh giá của giáo viên về buổi học này
             </CardDescription>
           </CardHeader>
           <CardContent>
             {feedbacks.filter(f => f.studentId === currentUserId).length === 0 ? (
               <div className="text-gray-500 text-center py-8">
-                Chưa có nhận xét nào cho bạn trong buổi học này
+                Chưa có đánh giá nào cho bạn trong buổi học này
               </div>
             ) : (
               <div className="space-y-4">
                 {feedbacks
                   .filter(f => f.studentId === currentUserId)
-                  .map((f: any) => (
-                    <div key={f.id} className="p-4 border rounded-lg bg-gradient-to-r from-blue-50 to-purple-50">
-                      <div className="flex justify-between items-center mb-2">
-                        <div className="font-medium text-purple-700">Nhận xét của giáo viên</div>
-                        <div className="text-sm text-gray-500">
-                          {new Date(f.createdAt).toLocaleString("vi-VN")}
+                  .map((f: any) => {
+                    const rating = f.rating || 0;
+                    return (
+                      <div key={f.id} className="p-5 border-2 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 shadow-md">
+                        <div className="flex justify-between items-center mb-3">
+                          <div className="font-semibold text-purple-700 text-base">Đánh giá của giáo viên</div>
+                          <div className="text-sm text-gray-500">
+                            {new Date(f.createdAt).toLocaleString("vi-VN")}
+                          </div>
+                        </div>
+
+                        {/* Star Rating Display */}
+                        {rating > 0 && (
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="flex gap-0.5">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`w-6 h-6 ${star <= rating
+                                    ? "fill-yellow-400 text-yellow-400"
+                                    : "fill-gray-200 text-gray-300"
+                                    }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-sm font-bold text-gray-700 ml-1">
+                              {rating}/5 sao
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="text-sm text-gray-800 leading-relaxed bg-white p-3 rounded-lg border border-purple-100">
+                          {f.feedbackText}
                         </div>
                       </div>
-                      <div className="text-sm text-gray-800 mb-2 leading-relaxed">
-                        {f.feedbackText}
-                      </div>
-                      <div className="flex gap-4 text-xs text-gray-600">
-                        {f.attitudeScore && (
-                          <div className="flex items-center gap-1">
-                            <span className="font-semibold">Điểm thái độ:</span>
-                            <span className="text-blue-600 font-bold">{f.attitudeScore}/10</span>
-                          </div>
-                        )}
-                        {f.participationLevel && (
-                          <div className="flex items-center gap-1">
-                            <span className="font-semibold">Mức độ tham gia:</span>
-                            <span className="text-purple-600 font-bold capitalize">{f.participationLevel}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
               </div>
             )}
           </CardContent>
@@ -421,34 +431,52 @@ export default function SessionDetailPage() {
         <div className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Nhận xét đã lưu</CardTitle>
+              <CardTitle>Đánh giá đã lưu</CardTitle>
               <CardDescription>
-                Danh sách nhận xét cho buổi học này
+                Danh sách đánh giá cho buổi học này
               </CardDescription>
             </CardHeader>
             <CardContent>
               {feedbacks.length === 0 ? (
-                <div className="text-gray-500">Chưa có nhận xét nào</div>
+                <div className="text-gray-500">Chưa có đánh giá nào</div>
               ) : (
                 <div className="space-y-4">
                   {feedbacks.map((f: any) => {
                     const studentName =
                       students.find((s) => s.studentId === f.studentId)?.name ||
                       "Học sinh";
+                    const rating = f.rating || 0;
                     return (
-                      <div key={f.id} className="p-4 border rounded">
-                        <div className="flex justify-between items-center mb-2">
-                          <div className="font-medium">{studentName}</div>
+                      <div key={f.id} className="p-4 border-2 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex justify-between items-center mb-3">
+                          <div className="font-semibold text-lg text-gray-800">{studentName}</div>
                           <div className="text-sm text-gray-500">
                             {new Date(f.createdAt).toLocaleString("vi-VN")}
                           </div>
                         </div>
-                        <div className="text-sm text-gray-800 mb-2">
+
+                        {/* Star Rating Display */}
+                        {rating > 0 && (
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="flex gap-0.5">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`w-5 h-5 ${star <= rating
+                                      ? "fill-yellow-400 text-yellow-400"
+                                      : "fill-gray-200 text-gray-300"
+                                    }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-sm font-bold text-gray-700 ml-1">
+                              {rating}/5 sao
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="text-sm text-gray-700 leading-relaxed bg-gray-50 p-3 rounded-md">
                           {f.feedbackText}
-                        </div>
-                        <div className="text-xs text-gray-600">
-                          Điểm thái độ: {f.attitudeScore ?? "-"} • Mức độ:{" "}
-                          {f.participationLevel}
                         </div>
                       </div>
                     );

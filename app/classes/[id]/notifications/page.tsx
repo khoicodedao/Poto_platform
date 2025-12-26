@@ -29,13 +29,17 @@ import {
   Smartphone,
   Mail,
   Zap,
-  Lightbulb
+  Lightbulb,
+  Image as ImageIcon,
+  Upload,
+  X,
 } from "lucide-react";
 
 export default function ClassNotificationsPage() {
   const params = useParams();
   const classId = parseInt(params.id as string);
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     title: "",
@@ -43,7 +47,62 @@ export default function ClassNotificationsPage() {
     type: "general",
     sentVia: "app",
     sendToZalo: false,
+    imageUrl: "", // New field for image
   });
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng chỉ chọn file hình ảnh",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Lỗi",
+        description: "Kích thước file không được vượt quá 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", file);
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: uploadFormData,
+      });
+
+      if (!response.ok) throw new Error("Upload failed");
+
+      const data = await response.json();
+      setFormData((prev) => ({ ...prev, imageUrl: data.url }));
+
+      toast({
+        title: "Thành công",
+        description: "Đã upload hình ảnh",
+      });
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: "Không thể upload hình ảnh",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,6 +131,7 @@ export default function ClassNotificationsPage() {
         type: "general",
         sentVia: "app",
         sendToZalo: false,
+        imageUrl: "",
       });
     } catch (error) {
       toast({
@@ -150,6 +210,61 @@ export default function ClassNotificationsPage() {
                 rows={4}
                 required
               />
+            </div>
+
+            {/* Image Upload Section */}
+            <div>
+              <Label className="flex items-center gap-2">
+                <ImageIcon className="w-4 h-4" />
+                Hình Ảnh Đính Kèm (Tùy chọn)
+              </Label>
+
+              <div className="mt-2">
+                {formData.imageUrl ? (
+                  <div className="relative border-2 border-dashed border-green-300 rounded-lg p-4 bg-green-50">
+                    <img
+                      src={formData.imageUrl}
+                      alt="Upload preview"
+                      className="w-full h-48 object-cover rounded-lg mb-3"
+                    />
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-green-700 font-medium flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4" />
+                        Hình ảnh đã được tải lên
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setFormData({ ...formData, imageUrl: "" })}
+                        className="hover:bg-red-50 hover:border-red-300 hover:text-red-600"
+                      >
+                        <X className="w-4 h-4 mr-1" />
+                        Xóa
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      disabled={isUploading}
+                    />
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <Upload className={`w-8 h-8 mb-2 text-gray-400 ${isUploading ? 'animate-bounce' : ''}`} />
+                      <p className="text-sm text-gray-600 font-medium">
+                        {isUploading ? "Đang tải lên..." : "Click để chọn hình ảnh"}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        PNG, JPG, GIF (Tối đa 5MB)
+                      </p>
+                    </div>
+                  </label>
+                )}
+              </div>
             </div>
 
             <div>

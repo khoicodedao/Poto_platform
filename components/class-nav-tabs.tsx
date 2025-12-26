@@ -15,6 +15,7 @@ import {
   Home,
   Trophy,
   Settings,
+  FolderOpen,
 } from "lucide-react";
 
 const classNavItems = [
@@ -59,6 +60,13 @@ const classNavItems = [
     href: "/notifications",
     description: "Gửi thông báo",
     teacherOnly: true, // Only for teachers
+  },
+  {
+    icon: FolderOpen,
+    label: "Học Tập",
+    href: "/materials",
+    description: "Video & tài liệu",
+    teacherOnly: false,
   },
   {
     icon: BookOpen,

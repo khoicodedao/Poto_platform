@@ -13,9 +13,10 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { User, Settings, LogOut, BookOpen } from "lucide-react"
+import { User, Settings, LogOut, BookOpen, GraduationCap, Calendar as CalendarIcon, Users } from "lucide-react"
 import { signOutAction } from "@/lib/actions/auth"
 import type { AuthUser } from "@/lib/auth-types"
+import Link from "next/link"
 
 interface UserMenuProps {
   user: AuthUser
@@ -44,12 +45,17 @@ export default function UserMenu({ user }: UserMenuProps) {
         return <Badge variant="default">Giáo viên</Badge>
       case "student":
         return <Badge variant="secondary">Học viên</Badge>
+      case "teaching_assistant":
+        return <Badge variant="outline" className="border-purple-500 text-purple-700">Trợ Giảng</Badge>
       case "admin":
         return <Badge variant="destructive">Quản trị</Badge>
       default:
         return null
     }
   }
+
+  // Check if user is TA or Admin (who can also access TA views)
+  const showTAMenu = user.role === "teaching_assistant" || user.role === "admin"
 
   return (
     <DropdownMenu>
@@ -70,6 +76,32 @@ export default function UserMenu({ user }: UserMenuProps) {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+
+        {/* TA Menu Items (visible to TA and Admin) */}
+        {showTAMenu && (
+          <>
+            <DropdownMenuItem asChild>
+              <Link href="/ta/dashboard">
+                <GraduationCap className="mr-2 h-4 w-4" />
+                <span>TA Dashboard</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/ta/calendar">
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                <span>Lịch Trợ Giảng</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/ta/classes">
+                <Users className="mr-2 h-4 w-4" />
+                <span>Lớp Của Tôi</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
+
         <DropdownMenuItem>
           <User className="mr-2 h-4 w-4" />
           <span>Hồ sơ</span>

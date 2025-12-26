@@ -51,6 +51,8 @@ interface Class {
     description: string | null;
     teacherId: number;
     teacherName: string;
+    teachingAssistantId: number | null;
+    taName: string | null;
     schedule: string | null;
     maxStudents: number;
     studentCount: number;
@@ -64,11 +66,18 @@ interface Teacher {
     email: string;
 }
 
+interface TA {
+    id: number;
+    name: string;
+    email: string;
+}
+
 export default function AdminClassesPage() {
     const router = useRouter();
     const { toast } = useToast();
     const [classes, setClasses] = useState<Class[]>([]);
     const [teachers, setTeachers] = useState<Teacher[]>([]);
+    const [tas, setTas] = useState<TA[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingClass, setEditingClass] = useState<Class | null>(null);
@@ -80,6 +89,7 @@ export default function AdminClassesPage() {
         name: "",
         description: "",
         teacherId: "",
+        teachingAssistantId: "",
         schedule: "",
         maxStudents: 20,
     });
@@ -88,6 +98,7 @@ export default function AdminClassesPage() {
         checkAuth();
         fetchClasses();
         fetchTeachers();
+        fetchTAs();
     }, []);
 
     const checkAuth = async () => {
@@ -135,12 +146,25 @@ export default function AdminClassesPage() {
         }
     };
 
+    const fetchTAs = async () => {
+        try {
+            const res = await fetch("/api/admin/teaching-assistants");
+            if (res.ok) {
+                const data = await res.json();
+                setTas(data.data || []);
+            }
+        } catch (error) {
+            console.error("Failed to fetch TAs:", error);
+        }
+    };
+
     const openCreate = () => {
         setEditingClass(null);
         setFormData({
             name: "",
             description: "",
             teacherId: "",
+            teachingAssistantId: "",
             schedule: "",
             maxStudents: 20,
         });
@@ -153,6 +177,7 @@ export default function AdminClassesPage() {
             name: classItem.name,
             description: classItem.description || "",
             teacherId: classItem.teacherId.toString(),
+            teachingAssistantId: classItem.teachingAssistantId?.toString() || "",
             schedule: classItem.schedule || "",
             maxStudents: classItem.maxStudents,
         });
@@ -183,6 +208,7 @@ export default function AdminClassesPage() {
                 body: JSON.stringify({
                     ...formData,
                     teacherId: parseInt(formData.teacherId),
+                    teachingAssistantId: formData.teachingAssistantId ? parseInt(formData.teachingAssistantId) : null,
                 }),
             });
 
@@ -433,6 +459,31 @@ export default function AdminClassesPage() {
                                     ))}
                                 </SelectContent>
                             </Select>
+                        </div>
+
+                        <div>
+                            <Label>Trợ Giảng (Tùy chọn)</Label>
+                            <Select
+                                value={formData.teachingAssistantId || "none"}
+                                onValueChange={(value) =>
+                                    setFormData({ ...formData, teachingAssistantId: value === "none" ? "" : value })
+                                }
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Chọn trợ giảng" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">Không gán</SelectItem>
+                                    {tas.map((ta) => (
+                                        <SelectItem key={ta.id} value={ta.id.toString()}>
+                                            {ta.name} ({ta.email})
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <p className="text-xs text-gray-500 mt-1">
+                                Trợ giảng sẽ được tự động gán cho các buổi học mới
+                            </p>
                         </div>
 
                         <div>

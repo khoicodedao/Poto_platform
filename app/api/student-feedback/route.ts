@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   addStudentFeedback,
   getSessionFeedbacks,
+  removeStudentFeedback,
 } from "@/lib/actions/class-sessions";
 
 export async function POST(req: Request) {
@@ -12,8 +13,7 @@ export async function POST(req: Request) {
       sessionId: body.sessionId,
       studentId: body.studentId,
       feedbackText: body.feedbackText,
-      attitudeScore: body.attitudeScore,
-      participationLevel: body.participationLevel,
+      rating: body.rating,
     });
 
     if (!result.success) {

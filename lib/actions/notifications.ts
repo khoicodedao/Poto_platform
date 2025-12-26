@@ -21,6 +21,7 @@ export interface NotificationInput {
   relatedAssignmentId?: number;
   sentVia?: "app" | "zalo" | "email";
   scheduledSendAt?: Date;
+  imageUrl?: string; // Image attachment URL
 }
 
 /**
@@ -46,6 +47,7 @@ export async function createNotification(input: NotificationInput) {
         sentVia: input.sentVia || "app",
         scheduledSendAt: input.scheduledSendAt,
         status: input.scheduledSendAt ? "pending" : "pending",
+        imageUrl: input.imageUrl,
       })
       .returning();
 

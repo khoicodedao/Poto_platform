@@ -23,6 +23,7 @@ import {
     GraduationCap,
     Calendar,
     Edit,
+    Search,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -54,6 +55,10 @@ export default function AdminEnrollStudentsPage() {
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
     const [selectedEnrolled, setSelectedEnrolled] = useState<EnrolledStudent | null>(null);
     const [endDate, setEndDate] = useState("");
+
+    // Search states
+    const [searchEnrolled, setSearchEnrolled] = useState("");
+    const [searchAvailable, setSearchAvailable] = useState("");
 
     useEffect(() => {
         checkAuth();
@@ -260,56 +265,82 @@ export default function AdminEnrollStudentsPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4">
-                        <div className="space-y-2">
-                            {enrolledStudents.map((student) => (
-                                <div
-                                    key={student.id}
-                                    className="p-3 border rounded-lg hover:bg-gray-50 transition-colors"
-                                >
-                                    <div className="flex items-start justify-between mb-2">
-                                        <div className="flex-1">
-                                            <p className="font-semibold">{student.name}</p>
-                                            <p className="text-sm text-gray-600">{student.email}</p>
-                                        </div>
-                                        <div className="flex gap-1">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => openEditDialog(student)}
-                                                className="hover:bg-blue-50 hover:border-blue-300"
-                                            >
-                                                <Edit className="w-3 h-3" />
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => handleUnenroll(student.id)}
-                                                className="hover:bg-red-50 hover:border-red-300 hover:text-red-600"
-                                            >
-                                                <UserMinus className="w-3 h-3" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-4 text-xs text-gray-500">
-                                        <span>
-                                            📅 Tham gia:{" "}
-                                            {new Date(student.enrolledAt).toLocaleDateString("vi-VN")}
-                                        </span>
-                                        {student.endDate && (
-                                            <Badge variant="outline" className="text-xs">
-                                                Kết thúc:{" "}
-                                                {new Date(student.endDate).toLocaleDateString("vi-VN")}
-                                            </Badge>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
+                        {/* Search Box */}
+                        <div className="mb-4">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <Input
+                                    placeholder="Tìm kiếm theo tên hoặc email..."
+                                    value={searchEnrolled}
+                                    onChange={(e) => setSearchEnrolled(e.target.value)}
+                                    className="pl-10"
+                                />
+                            </div>
+                        </div>
 
-                            {enrolledStudents.length === 0 && (
-                                <div className="text-center py-8 text-gray-500">
-                                    Chưa có học sinh nào trong lớp
-                                </div>
-                            )}
+                        <div className="space-y-2">
+                            {(() => {
+                                const filtered = enrolledStudents.filter((student) =>
+                                    student.name.toLowerCase().includes(searchEnrolled.toLowerCase()) ||
+                                    student.email.toLowerCase().includes(searchEnrolled.toLowerCase())
+                                );
+
+                                return filtered.length > 0 ? (
+                                    filtered.map((student) => (
+                                        <div
+                                            key={student.id}
+                                            className="p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                                        >
+                                            <div className="flex items-start justify-between mb-2">
+                                                <div className="flex-1">
+                                                    <p className="font-semibold">{student.name}</p>
+                                                    <p className="text-sm text-gray-600">{student.email}</p>
+                                                </div>
+                                                <div className="flex gap-1">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => openEditDialog(student)}
+                                                        className="hover:bg-blue-50 hover:border-blue-300"
+                                                        title="Chỉnh sửa thời gian"
+                                                    >
+                                                        <Edit className="w-3 h-3" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => handleUnenroll(student.id)}
+                                                        className="hover:bg-red-50 hover:border-red-300 hover:text-red-600"
+                                                        title="Bỏ học sinh khỏi lớp"
+                                                    >
+                                                        <UserMinus className="w-3 h-3" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-4 text-xs text-gray-500">
+                                                <span>
+                                                    📅 Tham gia:{" "}
+                                                    {new Date(student.enrolledAt).toLocaleDateString("vi-VN")}
+                                                </span>
+                                                {student.endDate && (
+                                                    <Badge variant="outline" className="text-xs">
+                                                        Kết thúc:{" "}
+                                                        {new Date(student.endDate).toLocaleDateString("vi-VN")}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : searchEnrolled ? (
+                                    <div className="text-center py-8 text-gray-500">
+                                        Không tìm thấy học sinh nào với từ khóa "{searchEnrolled}"
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-8 text-gray-500">
+                                        Chưa có học sinh nào trong lớp
+                                    </div>
+                                );
+                            })()}
                         </div>
                     </CardContent>
                 </Card>
@@ -323,33 +354,57 @@ export default function AdminEnrollStudentsPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4">
-                        <div className="space-y-2">
-                            {availableStudents.map((student) => (
-                                <div
-                                    key={student.id}
-                                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors"
-                                >
-                                    <div className="flex-1">
-                                        <p className="font-semibold">{student.name}</p>
-                                        <p className="text-sm text-gray-600">{student.email}</p>
-                                    </div>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => openEnrollDialog(student)}
-                                        className="hover:bg-green-50 hover:border-green-300 hover:text-green-600"
-                                    >
-                                        <UserPlus className="w-4 h-4 mr-1" />
-                                        Thêm
-                                    </Button>
-                                </div>
-                            ))}
+                        {/* Search Box */}
+                        <div className="mb-4">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <Input
+                                    placeholder="Tìm kiếm theo tên hoặc email..."
+                                    value={searchAvailable}
+                                    onChange={(e) => setSearchAvailable(e.target.value)}
+                                    className="pl-10"
+                                />
+                            </div>
+                        </div>
 
-                            {availableStudents.length === 0 && (
-                                <div className="text-center py-8 text-gray-500">
-                                    Không còn học sinh nào
-                                </div>
-                            )}
+                        <div className="space-y-2">
+                            {(() => {
+                                const filtered = availableStudents.filter((student) =>
+                                    student.name.toLowerCase().includes(searchAvailable.toLowerCase()) ||
+                                    student.email.toLowerCase().includes(searchAvailable.toLowerCase())
+                                );
+
+                                return filtered.length > 0 ? (
+                                    filtered.map((student) => (
+                                        <div
+                                            key={student.id}
+                                            className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                                        >
+                                            <div className="flex-1">
+                                                <p className="font-semibold">{student.name}</p>
+                                                <p className="text-sm text-gray-600">{student.email}</p>
+                                            </div>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => openEnrollDialog(student)}
+                                                className="hover:bg-green-50 hover:border-green-300 hover:text-green-600"
+                                            >
+                                                <UserPlus className="w-4 h-4 mr-1" />
+                                                Thêm
+                                            </Button>
+                                        </div>
+                                    ))
+                                ) : searchAvailable ? (
+                                    <div className="text-center py-8 text-gray-500">
+                                        Không tìm thấy học sinh nào với từ khóa "{searchAvailable}"
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-8 text-gray-500">
+                                        Không còn học sinh nào
+                                    </div>
+                                );
+                            })()}
                         </div>
                     </CardContent>
                 </Card>

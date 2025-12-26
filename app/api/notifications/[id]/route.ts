@@ -75,3 +75,33 @@ export async function PATCH(
     );
   }
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getCurrentSession();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const notificationId = parseInt(params.id);
+
+    // Delete from database
+    await db
+      .delete(notifications)
+      .where(eq(notifications.id, notificationId));
+
+    return NextResponse.json(
+      { success: true, message: "Notification deleted" },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("[API] Error deleting notification:", error);
+    return NextResponse.json(
+      { error: "Failed to delete notification" },
+      { status: 500 }
+    );
+  }
+}

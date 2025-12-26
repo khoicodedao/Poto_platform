@@ -19,6 +19,7 @@ import {
   Users,
   Bell,
   BookOpen,
+  FolderOpen,
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -52,6 +53,12 @@ const classFeatures = [
     label: "Thông Báo",
     href: "/notifications",
     description: "Gửi thông báo Zalo",
+  },
+  {
+    icon: FolderOpen,
+    label: "Học Tập",
+    href: "/materials",
+    description: "Video & tài liệu bài giảng",
   },
   {
     icon: BookOpen,

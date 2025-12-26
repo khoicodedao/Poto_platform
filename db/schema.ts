@@ -13,6 +13,7 @@ import { relations } from "drizzle-orm";
 export const userRoleEnum = pgEnum("user_role", [
   "student",
   "teacher",
+  "teaching_assistant",
   "admin",
 ]);
 export const assignmentStatusEnum = pgEnum("assignment_status", [
@@ -42,6 +43,13 @@ export const participationLevelEnum = pgEnum("participation_level", [
   "low",
 ]);
 
+export const materialTypeEnum = pgEnum("material_type", [
+  "video",
+  "document",
+  "link",
+  "other",
+]);
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: varchar("email", { length: 255 }).notNull().unique(),
@@ -66,6 +74,8 @@ export const classes = pgTable("classes", {
   teacherId: integer("teacher_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
+  teachingAssistantId: integer("teaching_assistant_id")
+    .references(() => users.id, { onDelete: "set null" }), // Default TA for this class
   schedule: varchar("schedule", { length: 255 }),
   roomId: varchar("room_id", { length: 255 }),
   zaloGroupId: varchar("zalo_group_id", { length: 255 }), // Zalo group for this class
@@ -232,10 +242,7 @@ export const studentFeedbacks = pgTable("student_feedbacks", {
     .notNull()
     .references(() => users.id, { onDelete: "restrict" }),
   feedbackText: text("feedback_text").notNull(),
-  attitudeScore: integer("attitude_score"),
-  participationLevel: participationLevelEnum("participation_level").default(
-    "medium"
-  ),
+  rating: integer("rating").default(5), // Star rating from 1 to 5
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -307,6 +314,7 @@ export const notifications = pgTable("notifications", {
   scheduledSendAt: timestamp("scheduled_send_at"),
   status: notificationStatusEnum("status").default("pending"),
   errorMessage: text("error_message"),
+  imageUrl: text("image_url"), // Image attachment for notification
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -319,6 +327,60 @@ export const notificationTemplates = pgTable("notification_templates", {
   messageTemplate: text("message_template").notNull(),
   channel: notificationChannelEnum("channel").notNull(),
   isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// === Learning Materials System ===
+export const learningUnits = pgTable("learning_units", {
+  id: serial("id").primaryKey(),
+  classId: integer("class_id")
+    .notNull()
+    .references(() => classes.id, { onDelete: "cascade" }),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  orderIndex: integer("order_index").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const learningMaterials = pgTable("learning_materials", {
+  id: serial("id").primaryKey(),
+  unitId: integer("unit_id")
+    .notNull()
+    .references(() => learningUnits.id, { onDelete: "cascade" }),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  type: materialTypeEnum("type").notNull().default("document"),
+  fileUrl: text("file_url"),
+  fileSize: integer("file_size"),
+  durationSeconds: integer("duration_seconds"), // For videos
+  orderIndex: integer("order_index").notNull().default(0),
+  uploadedBy: integer("uploaded_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// === Teaching Assistant Assignments ===
+export const teachingAssistantAssignments = pgTable("teaching_assistant_assignments", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  classId: integer("class_id")
+    .notNull()
+    .references(() => classes.id, { onDelete: "cascade" }),
+  assignedBy: integer("assigned_by")
+    .notNull()
+    .references(() => users.id, { onDelete: "restrict" }),
+  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at"), // Optional expiry date
+  isActive: boolean("is_active").default(true),
+  // Granular permissions for this TA in this class
+  canMarkAttendance: boolean("can_mark_attendance").default(true),
+  canManageMaterials: boolean("can_manage_materials").default(true),
+  canGradeAssignments: boolean("can_grade_assignments").default(false),
+  canManageSessions: boolean("can_manage_sessions").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -475,6 +537,25 @@ export const notificationTemplatesRelations = relations(
   ({ many }) => ({})
 );
 
+// === Teaching Assistant Relations ===
+export const teachingAssistantAssignmentsRelations = relations(
+  teachingAssistantAssignments,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [teachingAssistantAssignments.userId],
+      references: [users.id],
+    }),
+    class: one(classes, {
+      fields: [teachingAssistantAssignments.classId],
+      references: [classes.id],
+    }),
+    assignedByUser: one(users, {
+      fields: [teachingAssistantAssignments.assignedBy],
+      references: [users.id],
+    }),
+  })
+);
+
 // Update existing relations to include new tables
 export const usersRelations = relations(users, ({ many }) => ({
   teachingClasses: many(classes),
@@ -487,6 +568,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   createdFeedbacks: many(studentFeedbacks),
   createdReports: many(classReports),
   receivedNotifications: many(notifications),
+  taAssignments: many(teachingAssistantAssignments),
 }));
 
 export const classesRelations = relations(classes, ({ one, many }) => ({
@@ -500,4 +582,5 @@ export const classesRelations = relations(classes, ({ one, many }) => ({
   messages: many(messages),
   sessions: many(classSessions),
   notifications: many(notifications),
+  taAssignments: many(teachingAssistantAssignments),
 }));

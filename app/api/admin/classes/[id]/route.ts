@@ -21,7 +21,7 @@ export async function PUT(
 
         const classId = parseInt(params.id);
         const body = await request.json();
-        const { name, description, teacherId, schedule, maxStudents } = body;
+        const { name, description, teacherId, teachingAssistantId, schedule, maxStudents } = body;
 
         // Check if class exists
         const [existingClass] = await db
@@ -57,6 +57,29 @@ export async function PUT(
             }
         }
 
+        // If teachingAssistantId is being updated, verify the TA
+        if (teachingAssistantId) {
+            const [ta] = await db
+                .select()
+                .from(users)
+                .where(eq(users.id, teachingAssistantId))
+                .limit(1);
+
+            if (!ta) {
+                return NextResponse.json(
+                    { error: "Teaching Assistant not found" },
+                    { status: 404 }
+                );
+            }
+
+            if (ta.role !== "teaching_assistant" && ta.role !== "admin") {
+                return NextResponse.json(
+                    { error: "User is not a teaching assistant" },
+                    { status: 400 }
+                );
+            }
+        }
+
         // Update class
         const [updatedClass] = await db
             .update(classes)
@@ -64,12 +87,32 @@ export async function PUT(
                 name: name || existingClass.name,
                 description: description !== undefined ? description : existingClass.description,
                 teacherId: teacherId || existingClass.teacherId,
+                teachingAssistantId: teachingAssistantId !== undefined ? (teachingAssistantId || null) : existingClass.teachingAssistantId,
                 schedule: schedule !== undefined ? schedule : existingClass.schedule,
                 maxStudents: maxStudents || existingClass.maxStudents,
                 updatedAt: new Date(),
             })
             .where(eq(classes.id, classId))
             .returning();
+
+        // Handle TA assignment update
+        if (teachingAssistantId !== undefined) {
+            const { assignTAToClass, removeTAFromClass } = await import("@/lib/actions/teaching-assistant");
+
+            if (teachingAssistantId) {
+                // Assign or update TA
+                await assignTAToClass({
+                    userId: parseInt(teachingAssistantId),
+                    classId: classId,
+                    canMarkAttendance: true,
+                    canManageMaterials: true,
+                    canManageSessions: true,
+                });
+            } else if (existingClass.teachingAssistantId) {
+                // Remove TA if previously assigned
+                await removeTAFromClass(existingClass.teachingAssistantId, classId);
+            }
+        }
 
         return NextResponse.json({
             message: "Class updated successfully",

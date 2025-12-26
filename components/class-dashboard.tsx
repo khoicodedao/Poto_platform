@@ -10,6 +10,7 @@ import {
   BarChart3,
   Users,
   Bell,
+  FolderOpen,
 } from "lucide-react";
 
 interface ClassDashboardProps {
@@ -53,6 +54,13 @@ export function ClassDashboard({ classId, className }: ClassDashboardProps) {
       description: "Gửi thông báo qua Zalo & App",
       href: `/classes/${classId}/notifications`,
       color: "bg-red-50 text-red-600",
+    },
+    {
+      icon: FolderOpen,
+      title: "Tài Liệu Học Tập",
+      description: "Video bài giảng, tài liệu theo unit",
+      href: `/classes/${classId}/materials`,
+      color: "bg-purple-50 text-purple-600",
     },
     {
       icon: BookOpen,

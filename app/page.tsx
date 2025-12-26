@@ -16,12 +16,17 @@ import {
   Users,
   Video,
   Clock,
+  Bell,
+  LogIn,
+  AlertTriangle,
 } from "lucide-react";
 import { getClassesForUser, getGuestSessionsForTeacher } from "@/lib/actions/classes";
 import { getAssignments } from "@/lib/actions/assignments";
 import { getFiles } from "@/lib/actions/files";
 import { getCurrentSession } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
+import { getUpcomingSessions, getImminentSessions } from "@/lib/actions/class-sessions";
+import { calculateSessionStatus } from "@/lib/utils/session-status";
 
 const quickActions = [
   {
@@ -67,16 +72,45 @@ export default async function Dashboard() {
 
   const { user } = session;
 
-  const [classes, assignments, files, guestSessions] = await Promise.all([
+  const [classes, assignments, files, guestSessions, upcomingSessions, imminentSessions] = await Promise.all([
     getClassesForUser(user.id, user.role as any),
     getAssignments(),
     getFiles(),
     user.role === "teacher" ? getGuestSessionsForTeacher(user.id) : Promise.resolve([]),
+    getUpcomingSessions(user.id, user.role),
+    getImminentSessions(user.id, user.role),
   ]);
 
   const featuredClasses = classes.slice(0, 3);
   const featuredAssignments = assignments.slice(0, 3);
   const recentFiles = files.slice(0, 5);
+
+  // Get imminent sessions (within 15 minutes) with calculated status
+  const imminentSessionsData = imminentSessions.success && Array.isArray(imminentSessions.data)
+    ? imminentSessions.data.map(session => ({
+      ...session,
+      calculatedStatus: calculateSessionStatus(
+        session.scheduledAt,
+        session.durationMinutes || 60,
+        session.status as any
+      ),
+    }))
+    : [];
+
+  // Get upcoming sessions with calculated status, excluding imminent sessions
+  const imminentSessionIds = new Set(imminentSessionsData.map(s => s.sessionId));
+  const upcomingSessionsData = upcomingSessions.success && Array.isArray(upcomingSessions.data)
+    ? upcomingSessions.data
+      .filter(session => !imminentSessionIds.has(session.sessionId)) // Exclude imminent sessions
+      .map(session => ({
+        ...session,
+        calculatedStatus: calculateSessionStatus(
+          session.scheduledAt,
+          session.durationMinutes || 60,
+          session.status as any
+        ),
+      }))
+    : [];
 
   const heroStats = [
     {
@@ -144,6 +178,179 @@ export default async function Dashboard() {
           </div>
         </div>
       </section>
+
+      {/* URGENT: Imminent Sessions Alert (Within 15 Minutes) */}
+      {imminentSessionsData.length > 0 && (
+        <section className="mt-6">
+          <Card className="border-4 border-red-500 bg-gradient-to-br from-red-50 via-orange-50 to-red-100 shadow-2xl">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-red-600 to-orange-600 shadow-xl">
+                  <AlertTriangle className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex-1">
+                  <CardTitle className="text-2xl bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent flex items-center gap-2">
+                    🚨 KHẨN CẤP: Buổi Học Sắp Bắt Đầu!
+                  </CardTitle>
+                  <CardDescription className="text-red-700 font-bold text-base">
+                    {imminentSessionsData.length} buổi học sẽ bắt đầu trong vòng 15 phút tới
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {imminentSessionsData.map((session, index) => {
+                const timeUntilStart = new Date(session.scheduledAt).getTime() - new Date().getTime();
+                const minutesUntil = Math.floor(timeUntilStart / (1000 * 60));
+                const secondsUntil = Math.floor((timeUntilStart % (1000 * 60)) / 1000);
+
+                return (
+                  <div
+                    key={session.sessionId}
+                    className="flex items-center justify-between rounded-xl border-4 border-red-400 p-5 shadow-2xl transition-all hover:shadow-red-300 hover:scale-[1.03] bg-gradient-to-r from-red-100 via-white to-orange-100"
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        {session.calculatedStatus === 'in-progress' ? (
+                          <Badge className="bg-green-600 text-white text-sm px-3 py-1 shadow-lg font-bold">
+                            ⚡ ĐANG DIỄN RA - VÀO NGAY!
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-red-600 text-white text-sm px-3 py-1 shadow-lg font-bold">
+                            🔥 CÒN {minutesUntil} PHÚT {secondsUntil} GIÂY
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="font-bold text-gray-900 text-xl truncate mb-2">
+                        {session.sessionTitle}
+                      </p>
+                      <div className="flex items-center gap-4 text-sm">
+                        <span className="flex items-center gap-1 text-red-700 font-bold">
+                          <Clock className="h-5 w-5" />
+                          {new Date(session.scheduledAt).toLocaleString('vi-VN', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                    <Link href={`/classroom/${session.classId}`}>
+                      <Button
+                        size="lg"
+                        className="ml-4 font-bold shadow-2xl text-base px-8 py-6 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 hover:scale-110 transition-all"
+                      >
+                        <LogIn className="mr-2 h-6 w-6" />
+                        VÀO NGAY!
+                      </Button>
+                    </Link>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        </section>
+      )}
+
+      {/* Upcoming Sessions Alert */}
+      {upcomingSessionsData.length > 0 && (
+        <section className="mt-6">
+          <Card className="border-2 border-amber-300 bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 shadow-xl animate-in fade-in slide-in-from-top-2">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 shadow-lg animate-pulse">
+                  <Bell className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <CardTitle className="text-xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+                    🔔 Buổi Học Sắp Diễn Ra
+                  </CardTitle>
+                  <CardDescription className="text-amber-700">
+                    Bạn có {upcomingSessionsData.length} buổi học trong vòng 24 giờ tới
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {upcomingSessionsData.slice(0, 3).map((session, index) => {
+                const timeUntilStart = new Date(session.scheduledAt).getTime() - new Date().getTime();
+                const hoursUntil = Math.floor(timeUntilStart / (1000 * 60 * 60));
+                const minutesUntil = Math.floor((timeUntilStart % (1000 * 60 * 60)) / (1000 * 60));
+                const isStartingSoon = hoursUntil < 1;
+
+                return (
+                  <div
+                    key={session.sessionId}
+                    className={`flex items-center justify-between rounded-xl border-2 p-4 shadow-md transition-all hover:shadow-lg hover:scale-[1.02] ${isStartingSoon
+                      ? 'border-red-400 bg-gradient-to-r from-red-50 to-orange-50 animate-pulse'
+                      : 'border-amber-300 bg-white'
+                      }`}
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        {isStartingSoon && (
+                          <Badge className="bg-red-500 text-white font-bold animate-bounce">
+                            🔥 SẮP BẮT ĐẦU
+                          </Badge>
+                        )}
+                        {session.calculatedStatus === 'in-progress' && (
+                          <Badge className="bg-green-500 text-white font-bold animate-pulse">
+                            ⚡ ĐANG DIỄN RA
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="font-bold text-gray-900 text-lg truncate">
+                        {session.sessionTitle}
+                      </p>
+                      <div className="flex items-center gap-4 mt-2 text-sm">
+                        <span className="flex items-center gap-1 text-amber-700 font-semibold">
+                          <Clock className="h-4 w-4" />
+                          {new Date(session.scheduledAt).toLocaleString('vi-VN', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                        <span className="text-gray-600">
+                          {isStartingSoon
+                            ? `Còn ${minutesUntil} phút`
+                            : hoursUntil < 24
+                              ? `Còn ${hoursUntil}h ${minutesUntil}m`
+                              : 'Sắp tới'}
+                        </span>
+                      </div>
+                    </div>
+                    <Link href={`/classroom/${session.classId}`}>
+                      <Button
+                        className={`ml-4 font-bold shadow-lg ${session.calculatedStatus === 'in-progress'
+                          ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 animate-pulse'
+                          : isStartingSoon
+                            ? 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600'
+                            : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600'
+                          }`}
+                      >
+                        <LogIn className="mr-2 h-4 w-4" />
+                        {session.calculatedStatus === 'in-progress' ? 'Vào Ngay' : 'Chuẩn Bị'}
+                      </Button>
+                    </Link>
+                  </div>
+                );
+              })}
+              {upcomingSessionsData.length > 3 && (
+                <Link href="/classes" className="block">
+                  <Button variant="outline" className="w-full mt-2 border-amber-300 text-amber-700 hover:bg-amber-50">
+                    Xem tất cả {upcomingSessionsData.length} buổi học sắp diễn ra
+                  </Button>
+                </Link>
+              )}
+            </CardContent>
+          </Card>
+        </section>
+      )}
 
       <section className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         {quickActions
