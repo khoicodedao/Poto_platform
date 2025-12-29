@@ -1,0 +1,28 @@
+# ====================================
+# ZALO OA CONFIGURATION
+# ====================================
+# Để lấy các giá trị này, làm theo hướng dẫn trong:
+# .agent/workflows/zalo-oa-integration.md
+
+# OA ID - Lấy từ https://oa.zalo.me/ -> Settings -> Thông tin OA
+ZALO_OA_ID=
+
+# App ID và Secret - Lấy từ https://developers.zalo.me/
+ZALO_APP_ID=
+ZALO_APP_SECRET=
+
+# Access Token - Lấy từ Developer Console hoặc qua OAuth
+# Lưu ý: Token FREE OA thường hết hạn sau 90 ngày
+ZALO_ACCESS_TOKEN=
+
+# (Tùy chọn) Webhook Sign Key - Để verify webhook từ Zalo
+ZALO_WEBHOOK_SIGN_KEY=
+
+# (Tùy chọn) Webhook Verify Token - Để Zalo verify webhook URL
+ZALO_WEBHOOK_VERIFY_TOKEN=
+
+# ====================================
+# CRON JOB CONFIGURATION
+# ====================================
+# Secret key để bảo vệ cron endpoints
+CRON_SECRET=your-random-secret-here

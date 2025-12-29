@@ -57,8 +57,10 @@ export async function sendZaloMessage(
   try {
     const config = getZaloConfig();
 
-    const message: ZaloMessage = {
-      recipient_id: zaloUserId,
+    const message = {
+      recipient: {
+        user_id: zaloUserId,
+      },
       message: {
         text: messageText,
         ...(attachment && { attachment }),
@@ -66,28 +68,29 @@ export async function sendZaloMessage(
     };
 
     const response = await fetch(
-      `${ZALO_PHONE_API}/me/message?access_token=${config.accessToken}`,
+      `https://openapi.zalo.me/v2.0/oa/message`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "access_token": config.accessToken,
         },
         body: JSON.stringify(message),
       }
     );
 
-    if (!response.ok) {
-      const errorData = await response.json();
+    const result = await response.json();
+
+    if (!response.ok || result.error !== 0) {
       console.error("[Zalo] Error sending message:", {
         status: response.status,
-        error: errorData,
+        error: result,
       });
       throw new Error(
-        `Zalo API error: ${errorData?.error?.message || response.statusText}`
+        `Zalo API error: ${result?.message || response.statusText}`
       );
     }
 
-    const result = await response.json();
     console.log("[Zalo] Message sent successfully:", {
       userId: zaloUserId,
       messageId: result?.data?.message_id,
@@ -159,21 +162,27 @@ export async function getZaloUserProfile(zaloUserId: string) {
     const config = getZaloConfig();
 
     const response = await fetch(
-      `${ZALO_PHONE_API}/${zaloUserId}?fields=id,name,avatar&access_token=${config.accessToken}`,
+      `https://openapi.zalo.me/v2.0/oa/getprofile?data={"user_id":"${zaloUserId}"}`,
       {
         method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "access_token": config.accessToken,
+        },
       }
     );
 
-    if (!response.ok) {
+    const result = await response.json();
+
+    if (!response.ok || result.error !== 0) {
       console.warn("[Zalo] User not found or error:", {
         userId: zaloUserId,
         status: response.status,
+        error: result,
       });
       return null;
     }
 
-    const result = await response.json();
     return result?.data;
   } catch (error) {
     console.error("[Zalo] Error fetching user profile:", error);
@@ -293,20 +302,44 @@ export async function testZaloConnection() {
     const config = getZaloConfig();
     console.log("[Zalo] Testing connection with OA:", config.oaId);
 
+    // Try OA API endpoint to get OA info
     const response = await fetch(
-      `${ZALO_PHONE_API}/me?access_token=${config.accessToken}`,
+      `https://openapi.zalo.me/v2.0/oa/getoa`,
       {
         method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "access_token": config.accessToken,
+        },
       }
     );
 
     if (response.ok) {
       const data = await response.json();
       console.log("[Zalo] Connection successful:", data);
-      return { success: true, data };
+
+      // Check if response has error code
+      if (data.error === 0) {
+        return {
+          success: true,
+          data: data.data,
+          message: "Connected to OA successfully"
+        };
+      } else {
+        return {
+          success: false,
+          error: data.message || "API returned error",
+          errorCode: data.error
+        };
+      }
     } else {
-      console.error("[Zalo] Connection failed:", response.status);
-      return { success: false, status: response.status };
+      const errorData = await response.json().catch(() => ({}));
+      console.error("[Zalo] Connection failed:", response.status, errorData);
+      return {
+        success: false,
+        status: response.status,
+        error: errorData.message || `HTTP ${response.status}`
+      };
     }
   } catch (error) {
     console.error("[Zalo] Error testing connection:", error);
