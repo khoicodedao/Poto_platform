@@ -67,8 +67,9 @@ export async function sendZaloMessage(
       },
     };
 
+    // API v3.0 endpoint
     const response = await fetch(
-      `https://openapi.zalo.me/v2.0/oa/message`,
+      `https://openapi.zalo.me/v3.0/oa/message/cs`,
       {
         method: "POST",
         headers: {
@@ -161,14 +162,18 @@ export async function getZaloUserProfile(zaloUserId: string) {
   try {
     const config = getZaloConfig();
 
+    // API v3.0 endpoint
     const response = await fetch(
-      `https://openapi.zalo.me/v2.0/oa/getprofile?data={"user_id":"${zaloUserId}"}`,
+      `https://openapi.zalo.me/v3.0/oa/user/detail`,
       {
-        method: "GET",
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           "access_token": config.accessToken,
         },
+        body: JSON.stringify({
+          user_id: zaloUserId,
+        }),
       }
     );
 
@@ -302,9 +307,9 @@ export async function testZaloConnection() {
     const config = getZaloConfig();
     console.log("[Zalo] Testing connection with OA:", config.oaId);
 
-    // Try OA API endpoint to get OA info
+    // API v3.0 endpoint to get OA info
     const response = await fetch(
-      `https://openapi.zalo.me/v2.0/oa/getoa`,
+      `https://openapi.zalo.me/v3.0/oa/info`,
       {
         method: "GET",
         headers: {

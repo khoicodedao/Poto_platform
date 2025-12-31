@@ -182,17 +182,31 @@ export function TopNav({ user }: TopNavProps) {
 
             {/* Admin Link - Only for admin */}
             {user && user.role === "admin" && (
-              <Link
-                href="/admin/dashboard"
-                className={clsx(
-                  "rounded-full px-4 py-1 transition",
-                  pathname.startsWith("/admin")
-                    ? "bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg"
-                    : "text-gray-500 hover:text-gray-900"
-                )}
-              >
-                ⚡ Admin
-              </Link>
+              <>
+                <Link
+                  href="/admin/dashboard"
+                  className={clsx(
+                    "rounded-full px-4 py-1 transition",
+                    pathname.startsWith("/admin")
+                      ? "bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg"
+                      : "text-gray-500 hover:text-gray-900"
+                  )}
+                >
+                  ⚡ Admin
+                </Link>
+                <Link
+                  href="/students"
+                  className={clsx(
+                    "rounded-full px-4 py-1 transition flex items-center gap-2",
+                    pathname === "/students"
+                      ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg"
+                      : "text-gray-500 hover:text-gray-900"
+                  )}
+                >
+                  <Users className="h-4 w-4" />
+                  Học viên
+                </Link>
+              </>
             )}
           </nav>
 

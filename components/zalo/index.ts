@@ -13,3 +13,4 @@ export { BulkUpdateZaloIdsDialog } from "./bulk-update-dialog";
 export { RegisteredAccountsList } from "./registered-accounts-list";
 export { AllFollowersList } from "./all-followers-list";
 export { ZaloTestSendForm } from "./test-send-form";
+export { SelectFollowerDialog } from "./select-follower-dialog";
