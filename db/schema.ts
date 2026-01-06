@@ -385,6 +385,37 @@ export const teachingAssistantAssignments = pgTable("teaching_assistant_assignme
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// === AI Chatbot System ===
+export const aiChatTopics = pgTable("ai_chat_topics", {
+  id: serial("id").primaryKey(),
+  classId: integer("class_id")
+    .notNull()
+    .references(() => classes.id, { onDelete: "cascade" }),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  systemPrompt: text("system_prompt").notNull(), // Instructions for AI
+  createdBy: integer("created_by")
+    .notNull()
+    .references(() => users.id, { onDelete: "restrict" }),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const aiChatMessages = pgTable("ai_chat_messages", {
+  id: serial("id").primaryKey(),
+  topicId: integer("topic_id")
+    .notNull()
+    .references(() => aiChatTopics.id, { onDelete: "cascade" }),
+  studentId: integer("student_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  role: varchar("role", { length: 50 }).notNull(), // 'user' or 'assistant'
+  content: text("content").notNull(),
+  audioUrl: text("audio_url"), // URL to audio message if voice was used
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const classEnrollmentsRelations = relations(
   classEnrollments,
   ({ one }) => ({
@@ -583,4 +614,29 @@ export const classesRelations = relations(classes, ({ one, many }) => ({
   sessions: many(classSessions),
   notifications: many(notifications),
   taAssignments: many(teachingAssistantAssignments),
+  aiChatTopics: many(aiChatTopics),
+}));
+
+// === AI Chatbot Relations ===
+export const aiChatTopicsRelations = relations(aiChatTopics, ({ one, many }) => ({
+  class: one(classes, {
+    fields: [aiChatTopics.classId],
+    references: [classes.id],
+  }),
+  createdByUser: one(users, {
+    fields: [aiChatTopics.createdBy],
+    references: [users.id],
+  }),
+  messages: many(aiChatMessages),
+}));
+
+export const aiChatMessagesRelations = relations(aiChatMessages, ({ one }) => ({
+  topic: one(aiChatTopics, {
+    fields: [aiChatMessages.topicId],
+    references: [aiChatTopics.id],
+  }),
+  student: one(users, {
+    fields: [aiChatMessages.studentId],
+    references: [users.id],
+  }),
 }));

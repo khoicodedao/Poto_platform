@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@excalidraw/excalidraw": "^0.18.0",
+    "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^3.9.1",
     "@livekit/components-react": "^2.9.16",
     "@livekit/components-styles": "^1.2.0",

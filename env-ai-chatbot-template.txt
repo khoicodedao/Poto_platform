@@ -1,0 +1,7 @@
+# Cấu hình cho AI Chatbot
+
+# Google AI Studio API Key
+# Lấy tại: https://makersuite.google.com/app/apikey
+GOOGLE_AI_API_KEY=your_google_ai_studio_api_key_here
+
+# Thêm vào file .env.local của bạn

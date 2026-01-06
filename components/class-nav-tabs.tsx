@@ -16,6 +16,7 @@ import {
   Trophy,
   Settings,
   FolderOpen,
+  Sparkles,
 } from "lucide-react";
 
 const classNavItems = [
@@ -76,6 +77,13 @@ const classNavItems = [
     teacherOnly: false,
   },
   {
+    icon: Sparkles,
+    label: "AI Chat",
+    href: "/ai-topics",
+    description: "Chủ đề chat AI",
+    teacherOnly: true, // Only for teachers
+  },
+  {
     icon: Trophy,
     label: "Kết quả",
     href: "/my-performance",
@@ -127,7 +135,7 @@ export function ClassNavTabs({ className }: ClassNavTabsProps) {
 
   return (
     <div className="border-b border-indigo-500 bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-700 shadow-md">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[100vw] flex justify-center items-center px-4 sm:px-6 lg:px-8">
         <div className="flex gap-1 overflow-x-auto scrollbar-hide py-1">
           {visibleNavItems.map((item) => {
             const Icon = item.icon;

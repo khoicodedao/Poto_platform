@@ -5,6 +5,8 @@ import { TopNav } from "@/components/top-nav";
 import { getCurrentSession } from "@/lib/auth";
 import { headers } from "next/headers";
 import { Toaster } from "@/components/ui/toaster";
+import { Toaster as SonnerToaster } from "sonner";
+import { ConditionalAIChatBubble } from "@/components/conditional-ai-chat-bubble";
 
 export const metadata: Metadata = {
   title: "EduPlatform",
@@ -31,6 +33,8 @@ export default async function RootLayout({
         {!hideTopNav && <TopNav user={session?.user ?? null} />}
         <div className={hideTopNav ? "" : "pt-20"}>{children}</div>
         <Toaster />
+        <SonnerToaster position="top-center" richColors />
+        <ConditionalAIChatBubble />
       </body>
     </html>
   );
