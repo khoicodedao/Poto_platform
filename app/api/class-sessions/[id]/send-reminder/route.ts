@@ -3,15 +3,15 @@ import { db } from "@/db";
 import { sendZaloMessage } from "@/lib/zalo-integration";
 
 /**
- * POST /api/class-sessions/[sessionId]/send-reminder
+ * POST /api/class-sessions/[id]/send-reminder
  * Gửi tin nhắn nhắc nhở qua Zalo cho tất cả học viên trong buổi học
  */
 export async function POST(
     req: NextRequest,
-    { params }: { params: { sessionId: string } }
+    { params }: { params: { id: string } }
 ) {
     try {
-        const sessionId = parseInt(params.sessionId);
+        const sessionId = parseInt(params.id);
 
         if (isNaN(sessionId)) {
             return NextResponse.json(
@@ -90,8 +90,7 @@ export async function POST(
 
 ⏳ Còn ${timeUntilText} nữa là đến giờ học!
 
-${session.description ? `📌 Ghi chú: ${session.description}\n` : ""}
-💡 Hãy chuẩn bị sẵn sàng và tham gia đúng giờ nhé!
+${session.description ? `📌 Ghi chú: ${session.description}\n` : ""}💡 Hãy chuẩn bị sẵn sàng và tham gia đúng giờ nhé!
 
 Chúc bạn học tập hiệu quả! 🎓`;
 
