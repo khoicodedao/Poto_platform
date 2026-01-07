@@ -12,7 +12,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Clock, Users, Star } from "lucide-react";
+import { AlertCircle, Clock, Users, Star, Send, BellRing } from "lucide-react";
 import { AttendanceChecklist } from "@/components/attendance-checklist";
 import { StudentFeedbackForm } from "@/components/student-feedback-form";
 import { ClassReportForm } from "@/components/class-report-form";
@@ -52,6 +52,11 @@ export default function SessionDetailPage() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [isUnauthenticated, setIsUnauthenticated] = useState(false);
+  const [sendingReminder, setSendingReminder] = useState(false);
+  const [reminderMessage, setReminderMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   useEffect(() => {
     fetchUserInfo();
@@ -154,6 +159,46 @@ export default function SessionDetailPage() {
     }
   };
 
+  const handleSendReminder = async () => {
+    try {
+      setSendingReminder(true);
+      setReminderMessage(null);
+
+      const response = await fetch(
+        `/api/class-sessions/${sessionId}/send-reminder`,
+        {
+          method: "POST",
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        setReminderMessage({
+          type: "success",
+          text: data.message || "Đã gửi nhắc nhở thành công!",
+        });
+      } else {
+        setReminderMessage({
+          type: "error",
+          text: data.error || "Có lỗi khi gửi nhắc nhở",
+        });
+      }
+
+      // Auto hide message after 5 seconds
+      setTimeout(() => setReminderMessage(null), 5000);
+    } catch (error) {
+      console.error("Error sending reminder:", error);
+      setReminderMessage({
+        type: "error",
+        text: "Có lỗi khi gửi nhắc nhở: " + String(error),
+      });
+      setTimeout(() => setReminderMessage(null), 5000);
+    } finally {
+      setSendingReminder(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8 pt-24">
@@ -243,6 +288,53 @@ export default function SessionDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Send Zalo Reminder Button - Only for teachers/admins */}
+      {userRole && userRole !== "student" && (
+        <Card className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <BellRing className="h-8 w-8 text-purple-600" />
+                <div>
+                  <h3 className="font-semibold text-lg">Gửi nhắc nhở qua Zalo</h3>
+                  <p className="text-sm text-gray-600">
+                    Gửi tin nhắn nhắc nhở buổi học tới tất cả học viên qua Zalo OA
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={handleSendReminder}
+                disabled={sendingReminder}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              >
+                {sendingReminder ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    Đang gửi...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    Gửi nhắc nhở
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Reminder Message Alert */}
+            {reminderMessage && (
+              <Alert
+                variant={reminderMessage.type === "error" ? "destructive" : "default"}
+                className="mt-4"
+              >
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{reminderMessage.text}</AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Show login prompt if unauthenticated */}
       {isUnauthenticated ? (
@@ -463,8 +555,8 @@ export default function SessionDetailPage() {
                                 <Star
                                   key={star}
                                   className={`w-5 h-5 ${star <= rating
-                                      ? "fill-yellow-400 text-yellow-400"
-                                      : "fill-gray-200 text-gray-300"
+                                    ? "fill-yellow-400 text-yellow-400"
+                                    : "fill-gray-200 text-gray-300"
                                     }`}
                                 />
                               ))}

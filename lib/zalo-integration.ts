@@ -3,6 +3,8 @@
  * Handles Zalo API communication for sending notifications to class groups
  */
 
+import { getZaloTokenManager } from "./zalo-token-manager";
+
 const ZALO_API_BASE = "https://openapi.zalo.me/v3.0";
 const ZALO_PHONE_API = "https://graph.zalo.me/v3.0";
 
@@ -31,9 +33,13 @@ interface ZaloGroupMessage {
 
 /**
  * Get Zalo config from environment
+ * Tự động lấy valid access token (refresh nếu cần)
  */
-function getZaloConfig(): ZaloConfig {
-  const accessToken = process.env.ZALO_ACCESS_TOKEN;
+async function getZaloConfig(): Promise<ZaloConfig> {
+  const tokenManager = getZaloTokenManager();
+
+  // Tự động lấy token hợp lệ (sẽ refresh nếu sắp hết hạn)
+  const accessToken = await tokenManager.getValidAccessToken();
   const oaId = process.env.ZALO_OA_ID;
   const webhookSignKey = process.env.ZALO_WEBHOOK_SIGN_KEY;
 
@@ -55,7 +61,7 @@ export async function sendZaloMessage(
   attachment?: any
 ) {
   try {
-    const config = getZaloConfig();
+    const config = await getZaloConfig();
 
     const message = {
       recipient: {
@@ -110,7 +116,7 @@ export async function sendZaloMessage(
  */
 export async function sendZaloGroupMessage(groupId: string, text: string) {
   try {
-    const config = getZaloConfig();
+    const config = await getZaloConfig();
 
     const message = {
       recipient_id: groupId,
@@ -160,7 +166,7 @@ export async function sendZaloGroupMessage(groupId: string, text: string) {
  */
 export async function getZaloUserProfile(zaloUserId: string) {
   try {
-    const config = getZaloConfig();
+    const config = await getZaloConfig();
 
     // API v3.0 endpoint
     const response = await fetch(
@@ -199,12 +205,12 @@ export async function getZaloUserProfile(zaloUserId: string) {
  * Parse and verify Zalo webhook signature
  * Verify message came from Zalo servers
  */
-export function verifyZaloWebhookSignature(
+export async function verifyZaloWebhookSignature(
   body: string,
   signature: string
-): boolean {
+): Promise<boolean> {
   try {
-    const config = getZaloConfig();
+    const config = await getZaloConfig();
     if (!config.webhookSignKey) {
       console.warn("[Zalo] Webhook signature key not configured");
       return false;
@@ -304,7 +310,7 @@ export function createZaloAttachment(
  */
 export async function testZaloConnection() {
   try {
-    const config = getZaloConfig();
+    const config = await getZaloConfig();
     console.log("[Zalo] Testing connection with OA:", config.oaId);
 
     // API v3.0 endpoint to get OA info
