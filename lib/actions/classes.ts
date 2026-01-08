@@ -47,6 +47,7 @@ export type ClassDetail = {
     name: string;
     email: string;
     avatar: string | null;
+    zaloUserId: string | null;
     enrolledAt: Date | null;
   }[];
   assignments: {
@@ -198,6 +199,7 @@ export async function getClassDetail(
       name: users.name,
       email: users.email,
       avatar: users.avatar,
+      zaloUserId: users.zaloUserId,
       enrolledAt: classEnrollments.enrolledAt,
     })
     .from(classEnrollments)

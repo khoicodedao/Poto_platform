@@ -14,12 +14,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Mail, User } from "lucide-react";
+import { Mail, User, MessageCircle, ExternalLink } from "lucide-react";
 
 interface Student {
   id: number;
   name: string;
   email: string;
+  zaloUserId?: string | null;
   enrolledAt?: string;
   status?: string;
 }
@@ -32,6 +33,25 @@ export function StudentsList({ classId }: StudentsListProps) {
   const [students, setStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+
+  // Function to create Zalo deep link
+  const getZaloDeepLink = (zaloUserId: string) => {
+    return `https://zalo.me/${zaloUserId}`;
+  };
+
+  const handleOpenZalo = (student: Student) => {
+    if (!student.zaloUserId) {
+      toast({
+        title: "Không có Zalo ID",
+        description: `Học sinh ${student.name} chưa liên kết tài khoản Zalo`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const zaloLink = getZaloDeepLink(student.zaloUserId);
+    window.open(zaloLink, "_blank");
+  };
 
   useEffect(() => {
     fetchStudents();
@@ -82,6 +102,7 @@ export function StudentsList({ classId }: StudentsListProps) {
                 <TableHead>Email</TableHead>
                 <TableHead>Ngày Tham Gia</TableHead>
                 <TableHead>Trạng Thái</TableHead>
+                <TableHead>Liên Hệ</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -110,6 +131,18 @@ export function StudentsList({ classId }: StudentsListProps) {
                       {student.status || "Đang Học"}
                     </Badge>
                   </TableCell>
+                  <TableCell>
+                    <Button
+                      size="sm"
+                      variant={student.zaloUserId ? "default" : "ghost"}
+                      className="flex items-center gap-2"
+                      onClick={() => handleOpenZalo(student)}
+                      disabled={!student.zaloUserId}
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      {student.zaloUserId ? "Nhắn tin" : "Chưa liên kết"}
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -132,10 +165,20 @@ export function StudentsList({ classId }: StudentsListProps) {
                   <Mail className="h-3 w-3" />
                   {student.email}
                 </div>
-                <div className="mt-2">
+                <div className="mt-2 flex items-center gap-2">
                   <Badge variant="outline">
                     {student.status || "Đang Học"}
                   </Badge>
+                  <Button
+                    size="sm"
+                    variant={student.zaloUserId ? "default" : "ghost"}
+                    className="flex items-center gap-1 text-xs"
+                    onClick={() => handleOpenZalo(student)}
+                    disabled={!student.zaloUserId}
+                  >
+                    <MessageCircle className="h-3 w-3" />
+                    Zalo
+                  </Button>
                 </div>
               </div>
             </div>

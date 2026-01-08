@@ -7,6 +7,7 @@ import { headers } from "next/headers";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "sonner";
 import { ConditionalAIChatBubble } from "@/components/conditional-ai-chat-bubble";
+import { ZaloChatWidget } from "@/components/zalo/zalo-chat-widget";
 
 export const metadata: Metadata = {
   title: "EduPlatform",
@@ -35,6 +36,7 @@ export default async function RootLayout({
         <Toaster />
         <SonnerToaster position="top-center" richColors />
         <ConditionalAIChatBubble />
+        <ZaloChatWidget />
       </body>
     </html>
   );
