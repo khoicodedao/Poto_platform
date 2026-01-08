@@ -58,7 +58,17 @@ export function AttendanceChecklist({
   useEffect(() => {
     // Fetch existing attendance for this session
     fetchAttendance();
+
+    // Auto-refresh attendance every 10 seconds to catch auto-attendance from classroom
+    const refreshInterval = setInterval(() => {
+      fetchAttendance();
+    }, 10000); // 10 seconds
+
+    return () => {
+      clearInterval(refreshInterval);
+    };
   }, [sessionId]);
+
 
   const fetchAttendance = async () => {
     try {
@@ -266,7 +276,7 @@ export function AttendanceChecklist({
           <Input
             placeholder="Ghi chú về buổi học (nếu cần)"
             className="mb-4"
-            // Add shared notes if needed
+          // Add shared notes if needed
           />
         </div>
 

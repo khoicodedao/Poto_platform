@@ -65,7 +65,17 @@ export default function SessionDetailPage() {
     fetchFeedbacks();
     fetchClassDetails();
     fetchAttendanceCount();
+
+    // Auto-refresh attendance count every 10 seconds to catch new students joining classroom
+    const attendanceInterval = setInterval(() => {
+      fetchAttendanceCount();
+    }, 10000); // 10 seconds
+
+    return () => {
+      clearInterval(attendanceInterval);
+    };
   }, [sessionId, classId]);
+
 
   const fetchUserInfo = async () => {
     try {

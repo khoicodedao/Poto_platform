@@ -64,6 +64,13 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
   // Whiteboard full màn hình
   const [isWhiteboardOpen, setIsWhiteboardOpen] = useState(false);
 
+  // Auto-attendance state
+  const [attendanceMarked, setAttendanceMarked] = useState(false);
+  const [attendanceMessage, setAttendanceMessage] = useState<{
+    type: "success" | "error" | "info";
+    text: string;
+  } | null>(null);
+
   const {
     room,
     localVideoRef,
@@ -204,6 +211,77 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
     }
   }, [chatMessages.length]);
 
+  // Auto-attendance when student joins classroom
+  useEffect(() => {
+    const markAutoAttendance = async () => {
+      // Chỉ điểm danh khi:
+      // 1. Đã kết nối vào phòng
+      // 2. Chưa điểm danh
+      // 3. User đã đăng nhập
+      console.log("[Auto-Attendance] Check conditions:", {
+        isConnected,
+        attendanceMarked,
+        hasUser: !!user,
+        classId
+      });
+
+      if (!isConnected || attendanceMarked || !user) {
+        console.log("[Auto-Attendance] Skipping - conditions not met");
+        return;
+      }
+
+      console.log("[Auto-Attendance] Starting auto-attendance for classId:", classId);
+
+      try {
+        const response = await fetch(`/api/classroom/${classId}/auto-attendance`, {
+          method: "POST",
+        });
+
+        console.log("[Auto-Attendance] API response status:", response.status);
+        const data = await response.json();
+        console.log("[Auto-Attendance] API response data:", data);
+
+        if (data.success) {
+          setAttendanceMarked(true);
+
+          const message = data.alreadyMarked
+            ? `Bạn đã được điểm danh cho buổi: ${data.sessionTitle || "buổi học này"}`
+            : `✓ Điểm danh ${data.status === "late" ? "muộn" : "thành công"} cho buổi: ${data.sessionTitle || "buổi học"}${data.minutesLate > 0 ? ` (Muộn ${data.minutesLate} phút)` : ""}`;
+
+          setAttendanceMessage({
+            type: data.status === "late" ? "info" : "success",
+            text: message,
+          });
+
+          console.log("[Auto-Attendance] Success! Message:", message);
+
+          // Tự động ẩn sau 8 giây
+          setTimeout(() => setAttendanceMessage(null), 8000);
+        } else {
+          // Không có buổi học nào đang diễn ra
+          console.warn("[Auto-Attendance] Failed:", data.message || data.error);
+
+          // Hiển thị thông báo warning cho user để debug
+          setAttendanceMessage({
+            type: "info",
+            text: `ℹ️ ${data.message || "Không tìm thấy buổi học đang diễn ra"}`,
+          });
+          setTimeout(() => setAttendanceMessage(null), 8000);
+        }
+      } catch (error) {
+        console.error("[Auto-Attendance] Error:", error);
+        setAttendanceMessage({
+          type: "error",
+          text: `❌ Lỗi điểm danh tự động: ${error}`,
+        });
+        setTimeout(() => setAttendanceMessage(null), 8000);
+      }
+    };
+
+    markAutoAttendance();
+  }, [isConnected, attendanceMarked, classId, user]);
+
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatMessage.trim()) return;
@@ -273,6 +351,21 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
             </div>
           </div>
         </header>
+
+        {/* Auto-attendance notification */}
+        {attendanceMessage && (
+          <div
+            className={`px-4 py-3 ${attendanceMessage.type === "success"
+              ? "bg-green-600"
+              : attendanceMessage.type === "info"
+                ? "bg-blue-600"
+                : "bg-red-600"
+              } text-white text-center text-sm font-medium animate-in slide-in-from-top duration-300`}
+          >
+            {attendanceMessage.text}
+          </div>
+        )}
+
 
         <div className="flex h-[calc(100vh-73px)]">
           {/* LEFT: video */}
