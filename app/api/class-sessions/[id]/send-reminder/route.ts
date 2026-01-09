@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { sendZaloMessage } from "@/lib/zalo-integration";
+import { sendSmartZaloMessage } from "@/lib/zalo-integration";
 
 /**
  * POST /api/class-sessions/[id]/send-reminder
  * Gửi tin nhắn nhắc nhở qua Zalo cho tất cả học viên trong buổi học
+ * 
+ * Sử dụng Smart Messaging:
+ * - Ưu tiên gửi Consultation (FREE)
+ * - Tự động fallback sang Promotion (PAID) khi vi phạm luật 48h
  */
 export async function POST(
     req: NextRequest,
@@ -94,23 +98,55 @@ ${session.description ? `📌 Ghi chú: ${session.description}\n` : ""}💡 Hãy
 
 Chúc bạn học tập hiệu quả! 🎓`;
 
-        // Gửi tin nhắn cho từng học viên
+        // Gửi tin nhắn cho từng học viên với Smart Logic
+        // Lấy attachment ID từ env (fallback cho Promotion)
+        const attachmentId = process.env.ZALO_REMINDER_ATTACHMENT_ID || process.env.ZALO_DEFAULT_ATTACHMENT_ID;
+
+        let consultationCount = 0;
+        let promotionCount = 0;
+        let quotaUsed = 0;
+
         const results = await Promise.allSettled(
             students.map(async (student: any) => {
-                try {
-                    await sendZaloMessage(student.zaloUserId!, message);
-                    console.log(`[Reminder] Sent to ${student.name} (${student.zaloUserId})`);
-                    return { success: true, studentId: student.id, studentName: student.name };
-                } catch (error) {
-                    console.error(
-                        `[Reminder] Failed to send to ${student.name}:`,
-                        error
+                const result = await sendSmartZaloMessage(
+                    student.zaloUserId!,
+                    message,
+                    attachmentId
+                );
+
+                if (result.success) {
+                    // Track message type
+                    if (result.messageType === "consultation") {
+                        consultationCount++;
+                    } else {
+                        promotionCount++;
+                        quotaUsed++;
+                    }
+
+                    console.log(
+                        `[Reminder] ✅ Sent to ${student.name} via ${result.messageType.toUpperCase()} ` +
+                        `(Quota: ${result.usedQuota ? "YES ❌" : "NO ✅"})`
                     );
+
+                    return {
+                        success: true,
+                        studentId: student.id,
+                        studentName: student.name,
+                        messageType: result.messageType,
+                        usedQuota: result.usedQuota,
+                    };
+                } else {
+                    console.error(
+                        `[Reminder] ❌ Failed to send to ${student.name}:`,
+                        result.error
+                    );
+
                     return {
                         success: false,
                         studentId: student.id,
                         studentName: student.name,
-                        error: String(error),
+                        error: result.error,
+                        errorCode: result.errorCode,
                     };
                 }
             })
@@ -132,6 +168,13 @@ Chúc bạn học tập hiệu quả! 🎓`;
             failed: failedCount,
             failedStudents,
             totalStudents: students.length,
+            // Smart messaging statistics
+            statistics: {
+                consultationCount,
+                promotionCount,
+                quotaUsed,
+                savedQuota: consultationCount, // Số quota đã tiết kiệm
+            },
         });
     } catch (error) {
         console.error("[Reminder] Error sending reminders:", error);

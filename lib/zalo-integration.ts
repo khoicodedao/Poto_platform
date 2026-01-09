@@ -357,3 +357,270 @@ export async function testZaloConnection() {
     return { success: false, error: String(error) };
   }
 }
+
+/**
+ * SMART MESSAGE SENDING - Consultation với Promotion Fallback
+ * 
+ * Luồng xử lý thông minh:
+ * 1. Ưu tiên gửi tin dạng Consultation/Text (miễn phí, không trừ quota)
+ * 2. Nếu lỗi -213 hoặc -201 (user không tương tác trong 48h)
+ * 3. Tự động chuyển sang Promotion (trừ quota, cần attachment_id)
+ * 
+ * @param zaloUserId - Zalo User ID của người nhận
+ * @param textContent - Nội dung tin nhắn dạng text (cho Consultation)
+ * @param promotionAttachmentId - Attachment ID (article/banner) cho Promotion message
+ * @param accessToken - Optional: Access token (nếu không truyền sẽ tự động lấy)
+ * @returns Object chứa kết quả gửi tin
+ */
+export async function sendSmartZaloMessage(
+  zaloUserId: string,
+  textContent: string,
+  promotionAttachmentId?: string,
+  accessToken?: string
+): Promise<{
+  success: boolean;
+  messageId?: string;
+  messageType: "consultation" | "promotion";
+  usedQuota: boolean;
+  error?: string;
+  errorCode?: number;
+}> {
+  try {
+    const config = await getZaloConfig();
+    const token = accessToken || config.accessToken;
+
+    // BƯỚC 1: Thử gửi tin dạng TƯ VẤN (Consultation/Text) trước
+    console.log("[Zalo Smart] Step 1: Attempting Consultation message to", zaloUserId);
+
+    try {
+      const consultationPayload = {
+        recipient: {
+          user_id: zaloUserId,
+        },
+        message: {
+          text: textContent,
+        },
+      };
+
+      const consultationResponse = await fetch(
+        "https://openapi.zalo.me/v3.0/oa/message/cs",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "access_token": token,
+          },
+          body: JSON.stringify(consultationPayload),
+        }
+      );
+
+      const consultationResult = await consultationResponse.json();
+
+      // Kiểm tra response thành công
+      if (consultationResponse.ok && consultationResult.error === 0) {
+        console.log("[Zalo Smart] ✅ Consultation message sent successfully!", {
+          userId: zaloUserId,
+          messageId: consultationResult?.data?.message_id,
+        });
+
+        return {
+          success: true,
+          messageId: consultationResult?.data?.message_id,
+          messageType: "consultation",
+          usedQuota: false, // Không trừ quota
+        };
+      }
+
+      // BƯỚC 2: Kiểm tra lỗi liên quan đến 48h rule
+      const errorCode = consultationResult.error;
+      // Error codes cho 48h/7day rule:
+      // -213: User hasn't interacted in 48h (documented)
+      // -201: User hasn't followed OA (documented)  
+      // -230: User hasn't interacted in 7 days (actual response from Zalo)
+      const is48HourError = errorCode === -213 || errorCode === -201 || errorCode === -230;
+
+      console.log("[Zalo Smart] ⚠️ Consultation failed:", {
+        errorCode,
+        message: consultationResult.message,
+        is48HourError,
+      });
+
+      if (!is48HourError) {
+        // Lỗi khác (không phải 48h), không fallback
+        throw new Error(
+          `Zalo API error ${errorCode}: ${consultationResult.message}`
+        );
+      }
+
+      // BƯỚC 3: FALLBACK - Gửi tin TRUYỀN THÔNG (Promotion)
+      console.log("[Zalo Smart] Step 2: Falling back to Promotion message...");
+
+      if (!promotionAttachmentId) {
+        throw new Error(
+          "Promotion message requires attachment_id but none was provided"
+        );
+      }
+
+      const promotionPayload = {
+        recipient: {
+          user_id: zaloUserId,
+        },
+        message: {
+          attachment: {
+            type: "template",
+            payload: {
+              template_type: "promotion",
+              elements: [
+                {
+                  attachment_id: promotionAttachmentId,
+                },
+              ],
+            },
+          },
+        },
+      };
+
+      const promotionResponse = await fetch(
+        "https://openapi.zalo.me/v2.0/oa/message",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "access_token": token,
+          },
+          body: JSON.stringify(promotionPayload),
+        }
+      );
+
+      const promotionResult = await promotionResponse.json();
+
+      if (promotionResponse.ok && promotionResult.error === 0) {
+        console.log("[Zalo Smart] ✅ Promotion message sent successfully!", {
+          userId: zaloUserId,
+          messageId: promotionResult?.data?.message_id,
+          quotaUsed: true,
+        });
+
+        return {
+          success: true,
+          messageId: promotionResult?.data?.message_id,
+          messageType: "promotion",
+          usedQuota: true, // Đã trừ quota
+        };
+      } else {
+        throw new Error(
+          `Promotion API error ${promotionResult.error}: ${promotionResult.message}`
+        );
+      }
+    } catch (innerError: any) {
+      // Lỗi trong quá trình xử lý
+      throw innerError;
+    }
+  } catch (error: any) {
+    console.error("[Zalo Smart] ❌ Error in sendSmartZaloMessage:", error);
+    return {
+      success: false,
+      messageType: "consultation",
+      usedQuota: false,
+      error: error.message || String(error),
+      errorCode: error.errorCode,
+    };
+  }
+}
+
+/**
+ * BATCH SMART SEND - Gửi hàng loạt với Smart Logic
+ * 
+ * Gửi tin nhắn cho nhiều người dùng với logic thông minh
+ * Tự động theo dõi quota usage và thống kê
+ * 
+ * @param recipients - Danh sách user IDs
+ * @param textContent - Nội dung text
+ * @param promotionAttachmentId - Attachment ID cho Promotion fallback
+ * @returns Thống kê chi tiết
+ */
+export async function batchSmartSend(
+  recipients: string[],
+  textContent: string,
+  promotionAttachmentId?: string
+): Promise<{
+  total: number;
+  success: number;
+  failed: number;
+  consultationCount: number;
+  promotionCount: number;
+  quotaUsed: number;
+  results: Array<{
+    userId: string;
+    success: boolean;
+    messageType?: "consultation" | "promotion";
+    usedQuota?: boolean;
+    error?: string;
+  }>;
+}> {
+  const results = [];
+  let successCount = 0;
+  let failedCount = 0;
+  let consultationCount = 0;
+  let promotionCount = 0;
+  let quotaUsed = 0;
+
+  for (const userId of recipients) {
+    try {
+      const result = await sendSmartZaloMessage(
+        userId,
+        textContent,
+        promotionAttachmentId
+      );
+
+      results.push({
+        userId,
+        success: result.success,
+        messageType: result.messageType,
+        usedQuota: result.usedQuota,
+        error: result.error,
+      });
+
+      if (result.success) {
+        successCount++;
+        if (result.messageType === "consultation") {
+          consultationCount++;
+        } else {
+          promotionCount++;
+          quotaUsed++;
+        }
+      } else {
+        failedCount++;
+      }
+
+      // Delay nhỏ để tránh rate limit
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    } catch (error) {
+      results.push({
+        userId,
+        success: false,
+        error: String(error),
+      });
+      failedCount++;
+    }
+  }
+
+  console.log("[Zalo Batch Smart] Summary:", {
+    total: recipients.length,
+    success: successCount,
+    failed: failedCount,
+    consultation: consultationCount,
+    promotion: promotionCount,
+    quotaUsed,
+  });
+
+  return {
+    total: recipients.length,
+    success: successCount,
+    failed: failedCount,
+    consultationCount,
+    promotionCount,
+    quotaUsed,
+    results,
+  };
+}
