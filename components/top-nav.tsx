@@ -128,7 +128,7 @@ export function TopNav({ user }: TopNavProps) {
           </Link>
 
           {/* Main Navigation */}
-          <nav className="ml-4 hidden items-center gap-1 rounded-full bg-gray-100 px-1 py-1 text-sm font-medium text-gray-500 md:flex">
+          <nav className="ml-4 hidden items-center gap-1 rounded-full bg-gray-100 px-1 py-1 text-sm font-medium text-gray-500 md:flex md:min-w-[823px]">
             {mainLinks.map((link) => {
               const isActive =
                 link.href === "/"

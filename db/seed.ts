@@ -1,4 +1,10 @@
-import 'dotenv/config';
+import { config } from 'dotenv';
+import { resolve } from 'path';
+
+// Load environment variables before any other imports
+config({ path: resolve(process.cwd(), '.env.local'), override: true });
+config({ path: resolve(process.cwd(), '.env'), override: true });
+
 import { db } from './index';
 import { users, classes, classEnrollments, assignments, files, messages } from './schema';
 import bcrypt from 'bcryptjs';

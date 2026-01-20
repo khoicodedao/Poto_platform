@@ -8,7 +8,7 @@
     "start": "next start -p 5001 -H 0.0.0.0",
     "lint": "next lint",
     "db:push": "drizzle-kit push",
-    "db:seed": "tsx db/seed.ts"
+    "db:seed": "tsx -r dotenv/config db/seed.ts"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "^0.18.0",
@@ -44,8 +44,10 @@
     "@radix-ui/react-toggle-group": "1.1.1",
     "@radix-ui/react-tooltip": "1.1.6",
     "@types/bcryptjs": "^2.4.6",
+    "@types/canvas-confetti": "^1.9.0",
     "autoprefixer": "^10.4.20",
     "bcryptjs": "latest",
+    "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",

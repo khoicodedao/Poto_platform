@@ -11,7 +11,7 @@ export default function ClassSessionsListPage() {
   const className = "Lớp Tiếng Anh A1";
 
   return (
-    <div className="container mx-auto px-4 py-8 pt-24">
+    <div className="container mx-auto px-4 py-8 pt-4">
       <ClassSessionsPage classId={classId} className={className} />
     </div>
   );

@@ -211,7 +211,7 @@ export default function SessionDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8 pt-24">
+      <div className="container mx-auto px-4 py-8 pt-4">
         <div className="animate-pulse space-y-4">
           <div className="h-32 bg-gray-200 rounded-lg"></div>
           <div className="h-64 bg-gray-200 rounded-lg"></div>
@@ -246,7 +246,7 @@ export default function SessionDetailPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 pt-24">
+    <div className="container mx-auto px-4 py-8 pt-4">
       <CustomBreadcrumb
         items={[
           { label: "Quản lý lớp học", href: "/classes" },

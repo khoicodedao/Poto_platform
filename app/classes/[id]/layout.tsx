@@ -12,11 +12,13 @@ export default async function ClassLayout({
     const classData = await getClassById(classId);
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50/50 via-purple-50/50 to-pink-50/50">
             <div className="bg-white sticky top-[60px] z-10 shadow-sm">
                 <ClassNavTabs className={classData?.name} />
             </div>
-            {children}
+            <div className="p-4">
+                {children}
+            </div>
         </div>
     );
 }

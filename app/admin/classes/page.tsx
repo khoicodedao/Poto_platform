@@ -261,14 +261,14 @@ export default function AdminClassesPage() {
 
     if (isLoading || !userRole) {
         return (
-            <div className="container mx-auto p-6 pt-24">
+            <div className="container mx-auto p-6 pt-8">
                 <div className="text-center py-8">Đang tải...</div>
             </div>
         );
     }
 
     return (
-        <div className="container mx-auto p-6 pt-24 space-y-6 animate-in fade-in duration-500">
+        <div className="container mx-auto p-6 pt-4 space-y-6 animate-in fade-in duration-500">
             {/* Header */}
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600 via-pink-600 to-red-600 p-8 shadow-2xl">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),transparent_50%)]" />

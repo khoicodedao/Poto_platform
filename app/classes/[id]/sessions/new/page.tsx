@@ -13,7 +13,7 @@ export default function NewSessionPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 pt-24 max-w-2xl">
+    <div className="container mx-auto px-4 py-8 pt-4 max-w-2xl">
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Tạo Buổi Học Mới</h1>
         <p className="text-gray-600 mt-2">

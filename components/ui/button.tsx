@@ -18,6 +18,15 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        
+        // Gamified 3D Variants
+        gamified: "bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--secondary))] text-white font-bold shadow-[0_6px_0_rgba(0,0,0,0.15)] hover:shadow-[0_4px_0_rgba(0,0,0,0.15)] hover:translate-y-[2px] active:translate-y-[6px] active:shadow-none transition-all duration-150",
+        
+        "gamified-success": "bg-gradient-to-br from-emerald-400 to-green-600 text-white font-bold shadow-[0_6px_0_rgba(0,0,0,0.15)] hover:shadow-[0_4px_0_rgba(0,0,0,0.15)] hover:translate-y-[2px] active:translate-y-[6px] active:shadow-none transition-all duration-150",
+        
+        "gamified-warning": "bg-gradient-to-br from-orange-400 to-amber-600 text-white font-bold shadow-[0_6px_0_rgba(0,0,0,0.15)] hover:shadow-[0_4px_0_rgba(0,0,0,0.15)] hover:translate-y-[2px] active:translate-y-[6px] active:shadow-none transition-all duration-150",
+        
+        "gamified-info": "bg-gradient-to-br from-cyan-400 to-blue-600 text-white font-bold shadow-[0_6px_0_rgba(0,0,0,0.15)] hover:shadow-[0_4px_0_rgba(0,0,0,0.15)] hover:translate-y-[2px] active:translate-y-[6px] active:shadow-none transition-all duration-150",
       },
       size: {
         default: "h-10 px-4 py-2",

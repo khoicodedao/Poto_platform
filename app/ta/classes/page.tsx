@@ -70,7 +70,7 @@ export default function TAClassesPage() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 pt-24 space-y-6">
+            <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 pt-4 space-y-6">
                 {/* Header */}
                 <div className="overflow-hidden rounded-3xl bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 text-white shadow-2xl">
                     <div className="p-8 space-y-6">

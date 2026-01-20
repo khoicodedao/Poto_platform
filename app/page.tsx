@@ -27,6 +27,9 @@ import { getCurrentSession } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
 import { getUpcomingSessions, getImminentSessions } from "@/lib/actions/class-sessions";
 import { calculateSessionStatus } from "@/lib/utils/session-status";
+import { MascotHeader } from "@/components/gamification/mascot";
+import { StreakDisplay } from "@/components/gamification/streak-counter";
+import { XPBar, CircularXP } from "@/components/gamification/xp-bar";
 
 const quickActions = [
   {
@@ -150,6 +153,10 @@ export default async function Dashboard() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
+      {/* Friendly Mascot Greeting */}
+      <div className="mt-2">
+        <MascotHeader userName={user.name} />
+      </div>
       <section className="mt-2 rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 text-white shadow-xl">
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>
@@ -177,6 +184,41 @@ export default async function Dashboard() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* Gamification: Streak & XP Cards */}
+      <section className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="rounded-3xl shadow-lg border-2 border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-orange-700">
+              <span className="text-2xl">🔥</span>
+              Streak Học Tập
+            </CardTitle>
+            <CardDescription>Số ngày học liên tiếp</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <StreakDisplay currentStreak={5} longestStreak={30} />
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-3xl shadow-lg border-2 border-yellow-200 bg-gradient-to-br from-yellow-50 to-green-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-green-700">
+              <span className="text-2xl">⭐</span>
+              Level & Kinh Nghiệm
+            </CardTitle>
+            <CardDescription>XP và tiến độ lên level</CardDescription>
+          </CardHeader>
+          <CardContent>  
+            <div className="flex items-center gap-6">
+              <CircularXP currentXP={75} targetXP={100} level={3} size="md" />
+              <div className="flex-1">
+                <XPBar currentXP={75} targetXP={100} level={3} showLabel={false} />
+                <p className="mt-2 text-sm text-gray-600">Hoàn thành bài tập để kiếm XP! 🎯</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </section>
 
       {/* URGENT: Imminent Sessions Alert (Within 15 Minutes) */}

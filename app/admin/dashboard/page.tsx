@@ -124,7 +124,7 @@ export default function AdminDashboardPage() {
     ];
 
     return (
-        <div className="container mx-auto p-6 pt-24 space-y-6 animate-in fade-in duration-500">
+        <div className="container mx-auto p-6 pt-4 space-y-6 animate-in fade-in duration-500">
             {/* Header */}
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 p-8 shadow-2xl">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),transparent_50%)]" />
