@@ -170,30 +170,42 @@ export default function LearningMaterialsPage() {
         <div className="min-h-screen bg-gray-50">
             <main className="mx-auto max-w-7xl px4 py-8 sm:px-6 lg:px-8 pt-4 space-y-6">
                 {/* Header */}
-                <div className="overflow-hidden rounded-3xl bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 text-white shadow-2xl">
-                    <div className="p-8 space-y-6">
-                        <div className="flex items-center gap-3">
-                            <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
-                                <FolderOpen className="w-6 h-6" />
+                <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 lg:p-10 shadow-xl">
+                    <div className="absolute top-0 right-0 -mr-20 -mt-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
+                    <div className="absolute bottom-0 left-0 -ml-20 -mb-20 h-80 w-80 rounded-full bg-indigo-500/20 blur-3xl"></div>
+
+                    <div className="relative flex flex-col md:flex-row justify-between items-start gap-6">
+                        <div className="flex-1 space-y-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm">
+                                    <FolderOpen className="w-6 h-6 text-white" />
+                                </div>
+                                <h1 className="text-3xl font-bold text-white drop-shadow-sm sm:text-4xl">
+                                    Tài Liệu Học Tập
+                                </h1>
                             </div>
-                            <h1 className="text-3xl font-bold">Tài Liệu Học Tập</h1>
+                            <p className="text-blue-100 text-lg font-medium flex items-center gap-2 max-w-2xl">
+                                <FileText className="w-5 h-5 text-blue-200" />
+                                Kho tài liệu, bài giảng và video tham khảo cho lớp học.
+                            </p>
                         </div>
-                        <p className="text-white/90 max-w-3xl">
-                            Video bài giảng, tài liệ và nguồn học tập được tổ chức theo từng unit
-                        </p>
-                        <div className="flex flex-wrap gap-3">
+
+                        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
                             <Link href={`/classes/${classId}`}>
-                                <Button variant="ghost" className="text-white hover:bg-white/20">
-                                    <ArrowLeft className="w-4 h-4 mr-2" />
-                                    Quay lại lớp học
+                                <Button
+                                    variant="outline"
+                                    className="bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-sm transition-all duration-200"
+                                >
+                                    <ArrowLeft className="mr-2 h-4 w-4" /> Quay Lại
                                 </Button>
                             </Link>
+
                             {canEdit && (
                                 <CreateUnitDialog
                                     classId={classId}
                                     onSuccess={fetchUnits}
                                     triggerButton={
-                                        <Button className="bg-white text-purple-700 hover:bg-white/90">
+                                        <Button className="bg-white text-indigo-600 hover:bg-indigo-50 border-0 font-bold shadow-lg hover:shadow-xl transition-all">
                                             <Plus className="w-4 h-4 mr-2" />
                                             Thêm Unit
                                         </Button>
@@ -226,26 +238,29 @@ export default function LearningMaterialsPage() {
                     </Card>
                 ) : (
                     <Accordion type="multiple" className="space-y-4">
-                        {units.map((unit) => (
+                        {units.map((unit, index) => (
                             <AccordionItem
                                 key={unit.id}
                                 value={`unit-${unit.id}`}
-                                className="border-2 rounded-xl bg-white shadow-sm"
+                                className="border border-gray-100 rounded-xl bg-white shadow-sm overflow-hidden"
                             >
-                                <AccordionTrigger className="hover:no-underline px-6 py-4">
+                                <AccordionTrigger className="hover:no-underline px-6 py-4 hover:bg-gray-50 transition-colors">
                                     <div className="flex items-center gap-4 w-full">
+                                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 font-bold text-lg">
+                                            {index + 1}
+                                        </div>
                                         <div className="flex-1 text-left">
                                             <h3 className="text-lg font-bold text-gray-900">
                                                 {unit.title}
                                             </h3>
                                             {unit.description && (
-                                                <p className="text-sm text-gray-600 mt-1">
+                                                <p className="text-sm text-gray-600 mt-1 line-clamp-1">
                                                     {unit.description}
                                                 </p>
                                             )}
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <Badge variant="secondary">
+                                        <div className="flex items-center gap-3">
+                                            <Badge variant="secondary" className="bg-gray-100 text-gray-600 hover:bg-gray-200">
                                                 {unit.materials.length} tài liệu
                                             </Badge>
                                             {canEdit && (
@@ -254,7 +269,7 @@ export default function LearningMaterialsPage() {
                                                         unit={unit}
                                                         onSuccess={fetchUnits}
                                                         triggerButton={
-                                                            <Button size="sm" variant="ghost">
+                                                            <Button size="icon" variant="ghost" className="h-8 w-8 text-gray-400 hover:text-indigo-600">
                                                                 <Edit className="w-4 h-4" />
                                                             </Button>
                                                         }
@@ -265,7 +280,7 @@ export default function LearningMaterialsPage() {
                                                         materialsCount={unit.materials.length}
                                                         onSuccess={fetchUnits}
                                                         triggerButton={
-                                                            <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                                                            <Button size="icon" variant="ghost" className="h-8 w-8 text-gray-400 hover:text-red-600 hover:bg-red-50">
                                                                 <Trash2 className="w-4 h-4" />
                                                             </Button>
                                                         }
@@ -275,16 +290,16 @@ export default function LearningMaterialsPage() {
                                         </div>
                                     </div>
                                 </AccordionTrigger>
-                                <AccordionContent className="px-6 pb-4">
+                                <AccordionContent className="px-6 py-6 bg-gray-50/50 border-t border-gray-100">
                                     {canEdit && (
-                                        <div className="space-y-3 mb-4">
+                                        <div className="mb-6">
                                             <UploadMaterialDialog
                                                 unitId={unit.id}
                                                 onSuccess={fetchUnits}
                                                 triggerButton={
-                                                    <Button size="sm" className="w-full sm:w-auto">
+                                                    <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm">
                                                         <Upload className="w-4 h-4 mr-2" />
-                                                        Upload Tài Liệu
+                                                        Upload Tài Liệu Mới
                                                     </Button>
                                                 }
                                             />
@@ -292,105 +307,97 @@ export default function LearningMaterialsPage() {
                                     )}
 
                                     {unit.materials.length === 0 ? (
-                                        <p className="text-sm text-gray-500 text-center py-8">
-                                            Chưa có tài liệu nào trong unit này
-                                        </p>
+                                        <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-gray-200 rounded-xl bg-white">
+                                            <FolderOpen className="w-12 h-12 text-gray-300 mb-3" />
+                                            <p className="text-gray-500 font-medium">Chưa có tài liệu nào</p>
+                                            <p className="text-sm text-gray-400 mt-1">Tài liệu tải lên sẽ xuất hiện ở đây</p>
+                                        </div>
                                     ) : (
-                                        <div className="space-y-3">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             {unit.materials.map((material) => (
                                                 <Card
                                                     key={material.id}
-                                                    className="hover:shadow-md transition-shadow"
+                                                    className="group border-0 shadow-sm hover:shadow-md transition-all duration-200 bg-white"
                                                 >
-                                                    <CardContent className="p-4">
+                                                    <CardContent className="p-5">
                                                         <div className="flex items-start gap-4">
-                                                            <div className="p-3 rounded-lg bg-gray-50">
+                                                            <div className="p-3 rounded-xl bg-gray-50 group-hover:bg-indigo-50 transition-colors">
                                                                 {getTypeIcon(material.type)}
                                                             </div>
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="flex items-start justify-between gap-2 mb-2">
-                                                                    <h4 className="font-semibold text-gray-900">
+                                                                    <h4 className="font-bold text-gray-900 line-clamp-2 group-hover:text-indigo-600 transition-colors">
                                                                         {material.title}
                                                                     </h4>
-                                                                    {getTypeBadge(material.type)}
                                                                 </div>
                                                                 {material.description && (
-                                                                    <p className="text-sm text-gray-600 mb-2">
+                                                                    <p className="text-sm text-gray-500 mb-3 line-clamp-2">
                                                                         {material.description}
                                                                     </p>
                                                                 )}
-                                                                <div className="flex flex-wrap gap-3 text-xs text-gray-500">
+                                                                <div className="flex flex-wrap gap-3 text-xs font-medium text-gray-400 mb-4">
+                                                                    <span className="bg-gray-100 px-2 py-0.5 rounded text-gray-600">
+                                                                        {material.type.toUpperCase()}
+                                                                    </span>
                                                                     {material.fileSize && (
                                                                         <span>{formatFileSize(material.fileSize)}</span>
                                                                     )}
                                                                     {material.durationSeconds && (
-                                                                        <span>⏱️ {formatDuration(material.durationSeconds)}</span>
+                                                                        <span className="flex items-center gap-1">
+                                                                            <PlayCircle className="w-3 h-3" />
+                                                                            {formatDuration(material.durationSeconds)}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+
+                                                                <div className="flex items-center gap-2 pt-2 border-t border-gray-50">
+                                                                    {material.fileUrl && (
+                                                                        <>
+                                                                            <Button
+                                                                                size="sm"
+                                                                                onClick={() => setViewingMaterial(material)}
+                                                                                className="flex-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-0 font-semibold"
+                                                                            >
+                                                                                Xem
+                                                                            </Button>
+                                                                            <Button
+                                                                                size="sm"
+                                                                                variant="outline"
+                                                                                asChild
+                                                                                className="px-3 border-gray-200 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
+                                                                            >
+                                                                                <a href={material.fileUrl} download>
+                                                                                    <Download className="w-4 h-4" />
+                                                                                </a>
+                                                                            </Button>
+                                                                        </>
+                                                                    )}
+
+                                                                    {canEdit && (
+                                                                        <div className="flex items-center border-l border-gray-200 pl-2 ml-1 gap-1">
+                                                                            <EditMaterialDialog
+                                                                                material={material}
+                                                                                onSuccess={fetchUnits}
+                                                                                triggerButton={
+                                                                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-gray-400 hover:text-indigo-600">
+                                                                                        <Edit className="w-3.5 h-3.5" />
+                                                                                    </Button>
+                                                                                }
+                                                                            />
+                                                                            <DeleteMaterialDialog
+                                                                                materialId={material.id}
+                                                                                materialTitle={material.title}
+                                                                                onSuccess={fetchUnits}
+                                                                                triggerButton={
+                                                                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-gray-400 hover:text-red-600">
+                                                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                                                    </Button>
+                                                                                }
+                                                                            />
+                                                                        </div>
                                                                     )}
                                                                 </div>
                                                             </div>
-                                                            {material.fileUrl && (
-                                                                <div className="flex flex-col gap-2">
-                                                                    {/* View/Play Button */}
-                                                                    <Button
-                                                                        size="sm"
-                                                                        onClick={() => setViewingMaterial(material)}
-                                                                        className="w-full"
-                                                                    >
-                                                                        <PlayCircle className="w-4 h-4 mr-1" />
-                                                                        Xem
-                                                                    </Button>
-
-                                                                    {/* Download Button */}
-                                                                    <Button
-                                                                        size="sm"
-                                                                        variant="outline"
-                                                                        asChild
-                                                                        className="w-full"
-                                                                    >
-                                                                        <a href={material.fileUrl} download>
-                                                                            <Download className="w-4 h-4 mr-1" />
-                                                                            Tải
-                                                                        </a>
-                                                                    </Button>
-
-                                                                    {/* Edit Button */}
-                                                                    {canEdit && (
-                                                                        <EditMaterialDialog
-                                                                            material={material}
-                                                                            onSuccess={fetchUnits}
-                                                                            triggerButton={
-                                                                                <Button
-                                                                                    size="sm"
-                                                                                    variant="secondary"
-                                                                                    className="w-full"
-                                                                                >
-                                                                                    <Edit className="w-4 h-4 mr-1" />
-                                                                                    Sửa
-                                                                                </Button>
-                                                                            }
-                                                                        />
-                                                                    )}
-
-                                                                    {/* Delete Button */}
-                                                                    {canEdit && (
-                                                                        <DeleteMaterialDialog
-                                                                            materialId={material.id}
-                                                                            materialTitle={material.title}
-                                                                            onSuccess={fetchUnits}
-                                                                            triggerButton={
-                                                                                <Button
-                                                                                    size="sm"
-                                                                                    variant="destructive"
-                                                                                    className="w-full"
-                                                                                >
-                                                                                    <Trash2 className="w-4 h-4 mr-1" />
-                                                                                    Xóa
-                                                                                </Button>
-                                                                            }
-                                                                        />
-                                                                    )}
-                                                                </div>
-                                                            )}
                                                         </div>
                                                     </CardContent>
                                                 </Card>

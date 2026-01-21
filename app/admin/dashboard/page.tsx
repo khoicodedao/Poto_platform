@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
     Users,
@@ -13,6 +14,10 @@ import {
     AlertCircle,
     UserCheck,
     BarChart3,
+    ArrowRight,
+    Settings,
+    Shield,
+    FileText
 } from "lucide-react";
 
 interface DashboardStats {
@@ -73,7 +78,10 @@ export default function AdminDashboardPage() {
     if (isLoading || !userRole) {
         return (
             <div className="container mx-auto p-6 pt-24">
-                <div className="text-center py-8">Đang tải...</div>
+                <div className="flex flex-col items-center justify-center space-y-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                    <p className="text-gray-500 font-medium">Đang tải dữ liệu quản trị...</p>
+                </div>
             </div>
         );
     }
@@ -83,152 +91,196 @@ export default function AdminDashboardPage() {
             title: "Tổng Người Dùng",
             value: stats?.totalUsers || 0,
             icon: Users,
-            color: "from-blue-500 to-blue-600",
-            bgColor: "bg-blue-50",
+            color: "text-blue-600",
+            bg: "bg-blue-100",
+            border: "border-blue-100",
         },
         {
             title: "Học Sinh",
             value: stats?.totalStudents || 0,
             icon: GraduationCap,
-            color: "from-green-500 to-green-600",
-            bgColor: "bg-green-50",
+            color: "text-green-600",
+            bg: "bg-green-100",
+            border: "border-green-100",
         },
         {
             title: "Giáo Viên",
             value: stats?.totalTeachers || 0,
             icon: UserCheck,
-            color: "from-purple-500 to-purple-600",
-            bgColor: "bg-purple-50",
+            color: "text-purple-600",
+            bg: "bg-purple-100",
+            border: "border-purple-100",
         },
         {
             title: "Lớp Học",
             value: stats?.totalClasses || 0,
             icon: BookOpen,
-            color: "from-orange-500 to-orange-600",
-            bgColor: "bg-orange-50",
+            color: "text-orange-600",
+            bg: "bg-orange-100",
+            border: "border-orange-100",
         },
         {
             title: "Buổi Học",
             value: stats?.totalSessions || 0,
             icon: Calendar,
-            color: "from-cyan-500 to-cyan-600",
-            bgColor: "bg-cyan-50",
+            color: "text-cyan-600",
+            bg: "bg-cyan-100",
+            border: "border-cyan-100",
         },
         {
             title: "Lớp Đang Hoạt Động",
             value: stats?.activeClasses || 0,
             icon: TrendingUp,
-            color: "from-teal-500 to-teal-600",
-            bgColor: "bg-teal-50",
+            color: "text-teal-600",
+            bg: "bg-teal-100",
+            border: "border-teal-100",
         },
     ];
 
-    return (
-        <div className="container mx-auto p-6 pt-4 space-y-6 animate-in fade-in duration-500">
-            {/* Header */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 p-8 shadow-2xl">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),transparent_50%)]" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,255,255,0.1),transparent_50%)]" />
+    const quickActions = [
+        {
+            href: "/admin/users",
+            title: "Quản Lý Người Dùng",
+            description: "Thêm, sửa, xóa tài khoản hệ thống",
+            icon: Users,
+            color: "text-blue-600",
+            bg: "bg-blue-50",
+            hoverAccents: "group-hover:text-blue-600 group-hover:bg-blue-600",
+        },
+        {
+            href: "/admin/classes",
+            title: "Quản Lý Lớp Học",
+            description: "Tạo lớp mới và phân công giáo viên",
+            icon: BookOpen,
+            color: "text-purple-600",
+            bg: "bg-purple-50",
+            hoverAccents: "group-hover:text-purple-600 group-hover:bg-purple-600",
+        },
+        {
+            href: "/classes",
+            title: "Xem Tất Cả Lớp",
+            description: "Truy cập trực tiếp danh sách lớp học",
+            icon: Calendar,
+            color: "text-green-600",
+            bg: "bg-green-50",
+            hoverAccents: "group-hover:text-green-600 group-hover:bg-green-600",
+        },
+        {
+            href: "/admin/files",
+            title: "Quản Lý Tài Liệu",
+            description: "Kiểm duyệt và quản lý tài liệu",
+            icon: FileText,
+            color: "text-amber-600",
+            bg: "bg-amber-50",
+            hoverAccents: "group-hover:text-amber-600 group-hover:bg-amber-600",
+        }
+    ];
 
-                <div className="relative">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
-                            <BarChart3 className="w-8 h-8 text-white" />
+    return (
+        <div className="container mx-auto p-4 pb-12 sm:px-6 lg:px-8 space-y-8 animate-in fade-in duration-500">
+            {/* Header Section */}
+            <section className="mt-2 rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 text-white shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-12 opacity-10 transform translate-x-10 -translate-y-10">
+                    <Shield className="w-64 h-64 text-white" />
+                </div>
+
+                <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-md">
+                                <BarChart3 className="w-6 h-6 text-white" />
+                            </div>
+                            <p className="text-sm uppercase tracking-widest text-white/80 font-semibold">
+                                Khu Vực Quản Trị
+                            </p>
                         </div>
-                        <h1 className="text-4xl font-bold text-white drop-shadow-lg">
+                        <h1 className="text-3xl font-bold sm:text-4xl">
                             Admin Dashboard
                         </h1>
+                        <p className="mt-2 max-w-xl text-white/90 text-lg">
+                            Tổng quan hệ thống, quản lý người dùng và theo dõi hoạt động học tập.
+                        </p>
                     </div>
-                    <p className="text-white/90 text-lg font-medium">
-                        Tổng quan hệ thống quản lý học tập
-                    </p>
                 </div>
-            </div>
+            </section>
+
+            {/* Alert for students needing attention */}
+            {stats && stats.studentsNeedAttention > 0 && (
+                <Alert className="rounded-2xl border-l-4 border-l-red-500 border-t-0 border-r-0 border-b-0 bg-white shadow-md">
+                    <AlertCircle className="h-5 w-5 text-red-600" />
+                    <AlertDescription className="text-gray-800 flex items-center gap-2">
+                        <span className="font-medium">Chú ý:</span>
+                        Có <span className="font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">{stats.studentsNeedAttention}</span> học sinh cần được chú ý đặc biệt do thành tích hoặc điểm danh.
+                    </AlertDescription>
+                </Alert>
+            )}
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {statCards.map((stat, index) => {
                     const Icon = stat.icon;
                     return (
                         <Card
                             key={index}
-                            className={`${stat.bgColor} border-2 hover:shadow-lg transition-all duration-200 hover:scale-105`}
+                            className="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg"
                         >
-                            <CardContent className="p-6">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex-1">
-                                        <p className="text-sm font-medium text-gray-600 mb-1">
-                                            {stat.title}
-                                        </p>
-                                        <p className="text-3xl font-bold text-gray-900">
-                                            {stat.value}
-                                        </p>
-                                    </div>
-                                    <div
-                                        className={`p-4 rounded-2xl bg-gradient-to-br ${stat.color} shadow-lg`}
-                                    >
-                                        <Icon className="w-8 h-8 text-white" />
-                                    </div>
+                            <div className={`absolute top-0 right-0 p-3 opacity-10 transform translate-x-2 -translate-y-2 rounded-bl-3xl ${stat.bg}`}>
+                                <Icon className={`w-20 h-20 ${stat.color}`} />
+                            </div>
+
+                            <div className="relative z-10">
+                                <div className={`inline-flex p-3 rounded-xl ${stat.bg} mb-4 group-hover:scale-110 transition-transform`}>
+                                    <Icon className={`w-6 h-6 ${stat.color}`} />
                                 </div>
-                            </CardContent>
+                                <p className="text-sm font-medium text-gray-500">
+                                    {stat.title}
+                                </p>
+                                <h3 className="text-3xl font-bold text-gray-900 mt-1">
+                                    {stat.value.toLocaleString('vi-VN')}
+                                </h3>
+                            </div>
                         </Card>
                     );
                 })}
             </div>
 
-            {/* Alert for students needing attention */}
-            {stats && stats.studentsNeedAttention > 0 && (
-                <Alert className="border-2 border-red-300 bg-gradient-to-r from-red-50 to-orange-50">
-                    <AlertCircle className="h-5 w-5 text-red-600" />
-                    <AlertDescription className="text-red-800 font-medium">
-                        Có <span className="font-bold">{stats.studentsNeedAttention}</span>{" "}
-                        học sinh cần được chú ý đặc biệt
-                    </AlertDescription>
-                </Alert>
-            )}
-
             {/* Quick Actions */}
-            <Card className="border-2">
-                <CardHeader>
-                    <CardTitle className="text-xl">Quản Lý Nhanh</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <a
-                            href="/admin/users"
-                            className="p-4 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 hover:shadow-lg transition-all hover:scale-105 cursor-pointer"
-                        >
-                            <Users className="w-8 h-8 text-blue-600 mb-2" />
-                            <h3 className="font-bold text-gray-900">Quản Lý Người Dùng</h3>
-                            <p className="text-sm text-gray-600">
-                                Tạo, sửa, xóa tài khoản
-                            </p>
-                        </a>
+            <section>
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="h-8 w-1 bg-indigo-600 rounded-full"></div>
+                    <h2 className="text-2xl font-bold text-gray-800">Truy Cập Nhanh</h2>
+                </div>
 
-                        <a
-                            href="/admin/classes"
-                            className="p-4 rounded-lg bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 hover:shadow-lg transition-all hover:scale-105 cursor-pointer"
-                        >
-                            <BookOpen className="w-8 h-8 text-purple-600 mb-2" />
-                            <h3 className="font-bold text-gray-900">Quản Lý Lớp Học</h3>
-                            <p className="text-sm text-gray-600">
-                                Tạo lớp, gán giáo viên
-                            </p>
-                        </a>
-
-                        <a
-                            href="/classes"
-                            className="p-4 rounded-lg bg-gradient-to-br from-green-50 to-teal-50 border-2 border-green-200 hover:shadow-lg transition-all hover:scale-105 cursor-pointer"
-                        >
-                            <Calendar className="w-8 h-8 text-green-600 mb-2" />
-                            <h3 className="font-bold text-gray-900">Xem Tất Cả Lớp</h3>
-                            <p className="text-sm text-gray-600">
-                                Danh sách lớp học
-                            </p>
-                        </a>
-                    </div>
-                </CardContent>
-            </Card>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {quickActions.map((action, idx) => {
+                        const Icon = action.icon;
+                        return (
+                            <Link key={idx} href={action.href}>
+                                <Card className="h-full transition-all hover:-translate-y-1 hover:shadow-lg bg-white/50 backdrop-blur-sm border-gray-100">
+                                    <CardContent className="flex flex-col gap-4 p-6 h-full justify-between">
+                                        <div className="flex items-start justify-between">
+                                            <div className={`rounded-2xl ${action.bg} p-3 transition-colors`}>
+                                                <Icon className={`h-6 w-6 ${action.color}`} />
+                                            </div>
+                                            <div className="text-gray-300">
+                                                <ArrowRight className="w-5 h-5 group-hover:text-gray-600" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-lg text-gray-900 mb-1">
+                                                {action.title}
+                                            </p>
+                                            <p className="text-sm text-gray-500">
+                                                {action.description}
+                                            </p>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </Link>
+                        );
+                    })}
+                </div>
+            </section>
         </div>
     );
 }

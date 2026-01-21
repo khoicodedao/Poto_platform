@@ -19,6 +19,10 @@ import {
   Bell,
   LogIn,
   AlertTriangle,
+  BookOpen,
+  ArrowRight,
+  Settings,
+  HelpCircle,
 } from "lucide-react";
 import { getClassesForUser, getGuestSessionsForTeacher } from "@/lib/actions/classes";
 import { getAssignments } from "@/lib/actions/assignments";
@@ -209,7 +213,7 @@ export default async function Dashboard() {
             </CardTitle>
             <CardDescription>XP và tiến độ lên level</CardDescription>
           </CardHeader>
-          <CardContent>  
+          <CardContent>
             <div className="flex items-center gap-6">
               <CircularXP currentXP={75} targetXP={100} level={3} size="md" />
               <div className="flex-1">
@@ -423,54 +427,81 @@ export default async function Dashboard() {
 
       <section className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                {user.role === "teacher"
-                  ? "Lớp học đang giảng dạy"
-                  : "Lớp học của bạn"}
-              </CardTitle>
-              <CardDescription>
-                Tóm tắt các lớp trực tuyến hoạt động gần đây
-              </CardDescription>
+          <Card className="overflow-hidden border-none shadow-xl bg-white/50 backdrop-blur-sm">
+            <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 rounded-t-xl">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-lg backdrop-blur-md">
+                  <Users className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl">
+                    {user.role === "teacher" ? "Lớp giảng dạy" : "Lớp học của bạn"}
+                  </CardTitle>
+                  <CardDescription className="text-blue-100">
+                    Các lớp học đang hoạt động
+                  </CardDescription>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-6 grid gap-4">
               {featuredClasses.length === 0 ? (
-                <div className="rounded-2xl border border-dashed p-6 text-center text-gray-500">
-                  Bạn chưa tham gia lớp học nào.
+                <div className="flex flex-col items-center justify-center py-8 text-center border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
+                  <div className="p-4 bg-white rounded-full shadow-sm mb-3">
+                    <BookOpen className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-500 font-medium">Chưa có lớp học nào</p>
                 </div>
               ) : (
                 featuredClasses.map((classItem) => (
                   <div
                     key={classItem.id}
-                    className="flex items-center justify-between rounded-2xl border p-4 shadow-sm"
+                    className="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
                   >
-                    <div>
-                      <p className="text-lg font-semibold text-gray-900">
-                        {classItem.title}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Giảng viên: {classItem.teacher_name}
-                      </p>
-                      <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          {classItem.schedule ?? "Chưa cập nhật"}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Users className="h-4 w-4" />
-                          {classItem.student_count ?? 0} học viên
-                        </span>
+                    <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500" />
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="space-y-1">
+                        <h3 className="font-bold text-gray-900 line-clamp-1 group-hover:text-blue-600 transition-colors">
+                          {classItem.title}
+                        </h3>
+                        <p className="text-sm text-gray-500 flex items-center gap-1.5">
+                          <Users className="w-3.5 h-3.5" />
+                          {classItem.teacher_name}
+                        </p>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <div className="h-10 w-10 flex items-center justify-center rounded-full bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                          <Video className="w-5 h-5" />
+                        </div>
                       </div>
                     </div>
-                    <Link href={`/classroom/${classItem.id}`}>
-                      <Button size="sm" variant="outline">
-                        Vào lớp
-                      </Button>
-                    </Link>
+
+                    <div className="mt-4 flex items-center justify-between">
+                      <div className="flex gap-2">
+                        <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-100">
+                          <Clock className="mr-1 w-3 h-3" />
+                          {classItem.schedule || "TBA"}
+                        </Badge>
+                        <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100">
+                          <Users className="mr-1 w-3 h-3" />
+                          {classItem.student_count ?? 0}
+                        </Badge>
+                      </div>
+
+                      <Link href={`/classroom/${classItem.id}`}>
+                        <Button size="sm" variant="ghost" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 -mr-2">
+                          Vào lớp <ArrowRight className="ml-1 w-4 h-4" />
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
                 ))
               )}
+
+              <Link href="/classes" className="mt-2 block">
+                <Button variant="outline" className="w-full border-dashed border-gray-300 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-all">
+                  Xem tất cả lớp học
+                </Button>
+              </Link>
             </CardContent>
           </Card>
 
@@ -535,53 +566,76 @@ export default async function Dashboard() {
             </Card>
           )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Bài tập nổi bật</CardTitle>
-              <CardDescription>
-                {user.role === "teacher"
-                  ? "Những bài tập bạn vừa giao gần đây"
-                  : "Những bài tập bạn cần chú ý"}
-              </CardDescription>
+          <Card className="overflow-hidden border-none shadow-xl bg-white/50 backdrop-blur-sm">
+            <CardHeader className="bg-gradient-to-r from-orange-500 to-amber-500 text-white p-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-lg backdrop-blur-md">
+                  <Award className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl">Bài tập nổi bật</CardTitle>
+                  <CardDescription className="text-orange-100">
+                    Nhiệm vụ cần hoàn thành ngay
+                  </CardDescription>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-6 space-y-4">
               {featuredAssignments.length === 0 ? (
-                <div className="rounded-2xl border border-dashed p-6 text-center text-gray-500">
-                  Chưa có bài tập nào.
+                <div className="flex flex-col items-center justify-center py-8 text-center border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
+                  <div className="p-4 bg-white rounded-full shadow-sm mb-3">
+                    <FileText className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-500 font-medium">Không có bài tập nào</p>
                 </div>
               ) : (
                 featuredAssignments.map((assignment) => (
                   <div
                     key={assignment.id}
-                    className="flex items-center justify-between rounded-2xl border p-4 shadow-sm"
+                    className="group flex items-center gap-4 rounded-xl border border-orange-100 bg-white p-4 shadow-sm transition-all hover:scale-[1.02] hover:shadow-md hover:border-orange-200"
                   >
-                    <div>
-                      <p className="font-semibold text-gray-900">
+                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-orange-100/50 text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                      <FileText className="h-6 w-6" />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-gray-900 group-hover:text-orange-600 transition-colors truncate">
                         {assignment.title}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {assignment.className ?? "Lớp học"}
-                      </p>
-                      <div className="mt-2 flex items-center gap-3 text-sm text-gray-500">
+                      </h4>
+                      <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
                         <span className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
+                          <Users className="h-3 w-3" />
+                          {assignment.className}
+                        </span>
+                        <span className="flex items-center gap-1 text-orange-600 font-medium">
+                          <Calendar className="h-3 w-3" />
                           {assignment.dueDate
                             ? new Date(assignment.dueDate).toLocaleDateString(
                               "vi-VN"
                             )
                             : "Không hạn"}
                         </span>
-                        <span>{assignment.maxScore ?? 100} điểm</span>
                       </div>
                     </div>
-                    <Link href={`/assignments/${assignment.id}`}>
-                      <Button size="sm" variant="ghost">
-                        Chi tiết
-                      </Button>
-                    </Link>
+
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="text-sm font-bold text-gray-900 bg-gray-100 px-2 py-1 rounded-md">
+                        {assignment.maxScore ?? 100} đ
+                      </span>
+                      <Link href={`/assignments/${assignment.id}`}>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-gray-400 hover:text-orange-600">
+                          <ArrowRight className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
                 ))
               )}
+              <Link href="/assignments" className="mt-2 block">
+                <Button variant="outline" className="w-full border-dashed border-gray-300 hover:border-orange-500 hover:text-orange-600 hover:bg-orange-50 transition-all">
+                  Xem tất cả bài tập
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </div>
@@ -646,23 +700,32 @@ export default async function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Liên kết nhanh</CardTitle>
+          <Card className="overflow-hidden border-none shadow-lg bg-gradient-to-br from-white to-gray-50">
+            <CardHeader className="border-b border-gray-100 bg-white/50 backdrop-blur-sm pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg text-gray-800">
+                <span className="text-2xl">🔗</span> Liên kết nhanh
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <Link href="/help" className="text-blue-600 hover:underline">
-                Trung tâm trợ giúp
-              </Link>
-              <Link href="/settings" className="text-blue-600 hover:underline">
-                Cài đặt tài khoản
-              </Link>
-              <Link
-                href="/feedback"
-                className="text-blue-600 hover:underline"
-              >
-                Gửi phản hồi
-              </Link>
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 gap-2">
+                {[
+                  { href: "/help", label: "Trung tâm trợ giúp", icon: HelpCircle, color: "text-sky-500", bg: "bg-sky-50" },
+                  { href: "/settings", label: "Cài đặt tài khoản", icon: Settings, color: "text-slate-500", bg: "bg-slate-50" },
+                  { href: "/feedback", label: "Gửi phản hồi", icon: MessageCircle, color: "text-pink-500", bg: "bg-pink-50" },
+                ].map((link, i) => (
+                  <Link key={link.href} href={link.href}>
+                    <div className="group flex items-center justify-between rounded-xl p-3 hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-gray-100">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${link.bg} transition-colors`}>
+                          <link.icon className={`w-4 h-4 ${link.color}`} />
+                        </div>
+                        <span className="font-medium text-gray-600 group-hover:text-gray-900">{link.label}</span>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-gray-600 transform group-hover:translate-x-1 transition-all" />
+                    </div>
+                  </Link>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </div>

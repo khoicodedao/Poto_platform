@@ -89,7 +89,7 @@ export function AssignmentScheduleForm({
         const errorData = await response.json();
         throw new Error(
           errorData.message ||
-            `Failed to ${assignmentId ? "update" : "create"} assignment`
+          `Failed to ${assignmentId ? "update" : "create"} assignment`
         );
       }
 
@@ -253,14 +253,14 @@ export function AssignmentScheduleForm({
           <Label>Cho phép nộp bài từng phần</Label>
         </div>
 
-        <Button type="submit" disabled={isLoading} className="w-full">
+        <Button type="submit" disabled={isLoading} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-md hover:shadow-lg transition-all">
           {isLoading
             ? assignmentId
               ? "Đang cập nhật..."
               : "Đang tạo..."
             : assignmentId
-            ? "Cập Nhật Bài Tập"
-            : "Tạo Bài Tập"}
+              ? "Cập Nhật Bài Tập"
+              : "Tạo Bài Tập"}
         </Button>
       </form>
     </Card>

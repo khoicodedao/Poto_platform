@@ -148,31 +148,31 @@ export default function ClassNotificationsPage() {
   return (
     <div className="container mx-auto p-6 pt-4 space-y-6 animate-in fade-in duration-500">
       {/* Gradient Header Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-8 shadow-2xl">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,255,255,0.1),transparent_50%)]" />
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 lg:p-10 shadow-xl">
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 h-80 w-80 rounded-full bg-indigo-500/20 blur-3xl"></div>
 
-        <div className="relative flex justify-between items-start">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
+        <div className="relative flex flex-col md:flex-row justify-between items-start gap-6">
+          <div className="flex-1 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm">
                 <Bell className="w-6 h-6 text-white" />
               </div>
-              <h1 className="text-3xl font-bold text-white drop-shadow-lg">
+              <h1 className="text-3xl font-bold text-white drop-shadow-sm sm:text-4xl">
                 Gửi Thông Báo
               </h1>
             </div>
-            <p className="text-white/90 text-lg font-medium flex items-center gap-2">
-              <MessageSquare className="w-4 h-4" />
-              Gửi thông báo đến học sinh qua ứng dụng và Zalo
+            <p className="text-blue-100 text-lg font-medium flex items-center gap-2 max-w-2xl">
+              <MessageSquare className="w-5 h-5 text-blue-200" />
+              Gửi thông báo nhanh chóng đến tất cả học sinh qua Ứng dụng, Email và Zalo.
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 w-full md:w-auto">
             <Link href={`/classes/${classId}`}>
               <Button
-                variant="ghost"
-                className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm transition-all duration-200"
+                variant="outline"
+                className="bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-sm transition-all duration-200"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" /> Quay Lại
               </Button>
@@ -245,7 +245,7 @@ export default function ClassNotificationsPage() {
                     </div>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                  <label className="group flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-indigo-50 hover:border-indigo-300 transition-all">
                     <input
                       type="file"
                       accept="image/*"
@@ -322,7 +322,7 @@ export default function ClassNotificationsPage() {
               </Label>
             </div>
 
-            <Button type="submit" disabled={isLoading} className="w-full">
+            <Button type="submit" disabled={isLoading} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-md hover:shadow-lg transition-all">
               {isLoading ? "Đang gửi..." : "Gửi Thông Báo"}
             </Button>
           </form>

@@ -145,87 +145,83 @@ export function ClassSessionsPage({
       case "scheduled":
         return {
           label: "Đã Lên Lịch",
-          icon: Circle,
-          gradient: "from-blue-500 to-cyan-500",
-          bgClass: "bg-gradient-to-r from-blue-500/10 to-cyan-500/10",
-          borderClass: "border-blue-500/30",
-          textClass: "text-blue-600",
+          icon: Calendar,
+          color: "text-blue-600",
+          bgColor: "bg-blue-50",
+          borderColor: "border-blue-200",
+          badgeVariant: "default" as const, // We'll assume a custom mapping or just use styling
         };
       case "in-progress":
         return {
           label: "Đang Diễn Ra",
           icon: PlayCircle,
-          gradient: "from-green-500 to-emerald-500",
-          bgClass: "bg-gradient-to-r from-green-500/10 to-emerald-500/10",
-          borderClass: "border-green-500/30",
-          textClass: "text-green-600",
+          color: "text-indigo-600",
+          bgColor: "bg-indigo-50",
+          borderColor: "border-indigo-200",
           pulse: true,
         };
       case "completed":
         return {
           label: "Đã Kết Thúc",
           icon: CheckCircle2,
-          gradient: "from-purple-500 to-pink-500",
-          bgClass: "bg-gradient-to-r from-purple-500/10 to-pink-500/10",
-          borderClass: "border-purple-500/30",
-          textClass: "text-purple-600",
+          color: "text-emerald-600",
+          bgColor: "bg-emerald-50",
+          borderColor: "border-emerald-200",
         };
       case "cancelled":
         return {
           label: "Đã Hủy",
           icon: XCircle,
-          gradient: "from-red-500 to-orange-500",
-          bgClass: "bg-gradient-to-r from-red-500/10 to-orange-500/10",
-          borderClass: "border-red-500/30",
-          textClass: "text-red-600",
+          color: "text-red-600",
+          bgColor: "bg-red-50",
+          borderColor: "border-red-200",
         };
     }
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-in fade-in duration-500">
       {/* Header with gradient background */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-8 shadow-2xl">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,255,255,0.1),transparent_50%)]" />
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 lg:p-10 shadow-xl">
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 h-80 w-80 rounded-full bg-indigo-500/20 blur-3xl"></div>
 
-        <div className="relative flex justify-between items-start">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
-                <Video className="w-6 h-6 text-white" />
-              </div>
-              <h2 className="text-3xl font-bold text-white drop-shadow-lg">
-                Các Buổi Học
-              </h2>
+        <div className="relative flex flex-col md:flex-row justify-between items-start gap-6">
+          <div className="flex-1 space-y-4">
+            <div className="flex items-center gap-3">
+              <Badge className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-md px-3 py-1 text-xs font-medium transition-colors">
+                <Video className="mr-1.5 h-3.5 w-3.5" />
+                Quản lý buổi học
+              </Badge>
+              <Badge className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-md px-3 py-1 text-xs font-medium transition-colors">
+                Lớp: {className}
+              </Badge>
             </div>
-            <p className="text-white/90 text-lg font-medium flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              Lớp: {className}
+
+            <h2 className="text-3xl font-bold text-white sm:text-4xl">
+              Danh sách buổi học
+            </h2>
+            <p className="text-blue-100 max-w-2xl">
+              Theo dõi lịch trình, tham gia lớp học trực tuyến và quản lý nội dung giảng dạy.
             </p>
+
             {sessions.length > 0 && (
-              <div className="mt-4 flex gap-3">
-                <div className="px-4 py-2 rounded-lg bg-white/20 backdrop-blur-sm">
-                  <div className="text-2xl font-bold text-white">
-                    {sessions.length}
-                  </div>
-                  <div className="text-xs text-white/80">Tổng buổi học</div>
+              <div className="flex flex-wrap gap-4 pt-2">
+                <div className="flex items-center gap-2 text-sm font-medium text-blue-100 bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-sm">
+                  <span>{sessions.length} tổng số</span>
                 </div>
-                <div className="px-4 py-2 rounded-lg bg-white/20 backdrop-blur-sm">
-                  <div className="text-2xl font-bold text-white">
-                    {sessions.filter((s) => s.status === "completed").length}
-                  </div>
-                  <div className="text-xs text-white/80">Đã hoàn thành</div>
+                <div className="flex items-center gap-2 text-sm font-medium text-emerald-100 bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-sm">
+                  <span>{sessions.filter((s) => s.status === "completed").length} hoàn thành</span>
                 </div>
               </div>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
             <Button
-              variant="ghost"
+              variant="outline"
               onClick={() => router.back()}
-              className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm transition-all duration-200"
+              className="bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-sm transition-all duration-200"
             >
               <ArrowLeft className="mr-2 h-4 w-4" /> Quay lại
             </Button>
@@ -233,9 +229,9 @@ export function ClassSessionsPage({
               <Button
                 size="lg"
                 onClick={openCreate}
-                className="bg-white text-purple-600 hover:bg-white/90 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 font-semibold"
+                className="bg-white text-indigo-600 hover:bg-indigo-50 shadow-lg hover:shadow-xl font-bold transition-all hover:-translate-y-0.5 border-0"
               >
-                <Plus className="mr-2 h-4 w-4" /> Tạo Buổi Học
+                <Plus className="mr-2 h-5 w-5" /> Tạo Buổi Học
               </Button>
             )}
           </div>
@@ -250,58 +246,43 @@ export function ClassSessionsPage({
       )}
 
       {isLoading ? (
-        <div className="space-y-4">
+        <div className="grid gap-6">
           {[1, 2, 3].map((i) => (
-            <Card
+            <div
               key={i}
-              className="overflow-hidden border-2 animate-pulse"
+              className="h-32 w-full rounded-2xl bg-gray-100 animate-pulse"
               style={{ animationDelay: `${i * 100}ms` }}
-            >
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start gap-4">
-                  <div className="flex-1 space-y-3">
-                    <div className="h-6 w-3/4 bg-gradient-to-r from-gray-200 to-gray-300 rounded" />
-                    <div className="h-4 w-full bg-gradient-to-r from-gray-200 to-gray-300 rounded" />
-                    <div className="h-4 w-2/3 bg-gradient-to-r from-gray-200 to-gray-300 rounded" />
-                  </div>
-                  <div className="flex gap-2">
-                    <div className="h-10 w-20 bg-gradient-to-r from-gray-200 to-gray-300 rounded" />
-                    <div className="h-10 w-20 bg-gradient-to-r from-gray-200 to-gray-300 rounded" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            />
           ))}
         </div>
       ) : sessions.length === 0 ? (
-        <Card className="border-2 border-dashed">
-          <CardContent className="pt-12 pb-12 text-center">
-            <div className="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center mb-6 shadow-lg shadow-violet-500/30">
-              <Video className="w-10 h-10 text-white" />
+        <Card className="border-2 border-dashed border-gray-200 bg-gray-50/50">
+          <CardContent className="py-16 text-center">
+            <div className="mx-auto w-16 h-16 rounded-full bg-indigo-50 flex items-center justify-center mb-4">
+              <Calendar className="w-8 h-8 text-indigo-400" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-700 mb-2">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
               Chưa có buổi học nào
             </h3>
-            <p className="text-gray-500 mb-6">
+            <p className="text-gray-500 mb-6 max-w-md mx-auto">
               {userRole === "student"
-                ? "Chưa có buổi học nào được lên lịch"
-                : "Hãy tạo buổi học đầu tiên để bắt đầu lộ trình học tập"
+                ? "Giáo viên chưa lên lịch cho buổi học nào. Vui lòng quay lại sau."
+                : "Bắt đầu bằng cách tạo buổi học đầu tiên cho lớp của bạn."
               }
             </p>
             {userRole && userRole !== "student" && (
               <Button
                 onClick={openCreate}
-                size="lg"
-                className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-md hover:shadow-lg transition-all"
               >
-                <Plus className="mr-2 h-5 w-5" />
-                Tạo Buổi Học Đầu Tiên
+                <Plus className="mr-2 h-4 w-4" />
+                Thêm buổi học ngay
               </Button>
             )}
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="grid gap-4">
           {sessions.map((s, index) => {
             // Calculate dynamic status based on current time
             const dynamicStatus = calculateSessionStatus(
@@ -315,112 +296,95 @@ export function ClassSessionsPage({
             return (
               <Card
                 key={s.id}
-                className={`group overflow-hidden border-2 ${statusConfig.borderClass} ${statusConfig.bgClass} hover:shadow-xl transition-all duration-300 hover:scale-[1.01] animate-in fade-in slide-in-from-bottom-2`}
-                style={{ animationDelay: `${index * 50}ms` }}
+                className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:border-${statusConfig.color.split('-')[1]}-200 border-l-4 ${dynamicStatus === 'in-progress' ? 'border-l-indigo-500 shadow-md ring-1 ring-indigo-100' :
+                  dynamicStatus === 'completed' ? 'border-l-emerald-500' :
+                    dynamicStatus === 'cancelled' ? 'border-l-red-500' : 'border-l-blue-500'
+                  }`}
               >
                 <CardContent className="p-6">
-                  <div className="flex justify-between gap-6">
-                    <div className="flex-1 space-y-3">
-                      {/* Title and status */}
-                      <div className="flex items-start gap-3 flex-wrap">
-                        <div className={`px-3 py-1 rounded-full bg-gradient-to-r ${statusConfig.gradient} text-white text-xs font-bold shadow-sm`}>
-                          #{index + 1}
-                        </div>
-                        <h3 className="text-xl font-bold text-gray-800 flex-1">
-                          {s.title}
-                        </h3>
-                        <Badge
-                          className={`${statusConfig.textClass} ${statusConfig.bgClass} border-2 ${statusConfig.borderClass} px-3 py-1 font-semibold shadow-sm flex items-center gap-1.5 ${statusConfig.pulse ? "animate-pulse" : ""
-                            }`}
-                        >
-                          <StatusIcon className="w-3.5 h-3.5" />
+                  <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
+
+                    {/* Time Box */}
+                    <div className="flex-shrink-0 flex flex-col items-center justify-center rounded-xl bg-gray-50 p-4 min-w-[100px] border border-gray-100">
+                      <span className="text-2xl font-bold text-gray-900">
+                        {new Date(s.scheduledAt).getDate()}
+                      </span>
+                      <span className="text-xs uppercase font-medium text-gray-500">
+                        Tháng {new Date(s.scheduledAt).getMonth() + 1}
+                      </span>
+                      <div className="mt-2 text-xs font-semibold text-gray-600 bg-white px-2 py-1 rounded border border-gray-100">
+                        {new Date(s.scheduledAt).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div className="flex items-center gap-3 mb-1">
+                        <Badge variant="outline" className={`${statusConfig.color} ${statusConfig.bgColor} border-0 font-bold`}>
+                          {statusConfig.pulse && <span className="mr-1.5 relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                          </span>}
                           {statusConfig.label}
                         </Badge>
+                        <span className="text-xs text-gray-400 font-medium">Buổi {index + 1}</span>
                       </div>
 
-                      {/* Description */}
-                      {s.description && (
-                        <p className="text-gray-600 leading-relaxed">
-                          {s.description}
-                        </p>
-                      )}
+                      <h3 className="text-xl font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
+                        {s.title}
+                      </h3>
 
-                      {/* Info grid */}
-                      <div className="flex flex-wrap gap-4 pt-2">
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500/10 to-cyan-500/10">
-                            <Clock className="w-4 h-4 text-blue-600" />
-                          </div>
-                          <div>
-                            <div className="text-xs text-gray-500 font-medium">
-                              Thời gian
-                            </div>
-                            <div className="font-semibold text-gray-700">
-                              {new Date(s.scheduledAt).toLocaleString("vi-VN")}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10">
-                            <Timer className="w-4 h-4 text-purple-600" />
-                          </div>
-                          <div>
-                            <div className="text-xs text-gray-500 font-medium">
-                              Thời lượng
-                            </div>
-                            <div className="font-semibold text-gray-700">
-                              {s.durationMinutes} phút
-                            </div>
-                          </div>
+                      <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                        {s.description && (
+                          <p className="w-full text-gray-600 line-clamp-1">
+                            {s.description}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="w-4 h-4 text-gray-400" />
+                          <span>{s.durationMinutes} phút</span>
                         </div>
                       </div>
                     </div>
 
                     {/* Action buttons */}
-                    <div className="flex flex-col gap-2 min-w-fit">
-                      {/* Join Class Button - Only show when session is in-progress */}
-                      {dynamicStatus === "in-progress" && (
-                        <Link href={`/classroom/${classId}`}>
-                          <Button
-                            className="w-full bg-gradient-to-r from-red-500 to-red-500 text-white border-0 hover:from-red-600 hover:to-emerald-600 hover:shadow-xl hover:scale-110 transition-all duration-2000 font-bold animate-pulse shadow-lg shadow-red-500/50"
-                          >
-                            <LogIn className="mr-2 h-4 w-4" /> Vào Lớp Học
+                    <div className="flex flex-wrap md:flex-col gap-3 w-full md:w-auto md:min-w-[180px]">
+                      {dynamicStatus === "in-progress" ? (
+                        <Link href={`/classroom/${classId}`} className="w-full">
+                          <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 animate-pulse font-bold">
+                            <LogIn className="mr-2 h-4 w-4" /> Vào Lớp Ngay
+                          </Button>
+                        </Link>
+                      ) : (
+                        <Link href={`/classes/${classId}/sessions/${s.id}`} className="w-full">
+                          <Button variant="outline" className="w-full hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 font-medium text-gray-700 transition-colors">
+                            <Eye className="mr-2 h-4 w-4" /> Xem Chi Tiết
                           </Button>
                         </Link>
                       )}
-                      <Link href={`/classes/${classId}/sessions/${s.id}`}>
-                        <Button
-                          variant="outline"
-                          className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 hover:shadow-lg hover:scale-105 transition-all duration-200 font-semibold"
-                        >
-                          <Eye className="mr-2 h-4 w-4" /> Xem
-                        </Button>
-                      </Link>
+
                       {userRole && userRole !== "student" && (
-                        <>
+                        <div className="flex gap-2 w-full">
                           <Button
-                            variant="outline"
+                            variant="ghost"
+                            size="sm"
                             onClick={() => openEdit(s)}
-                            className="w-full hover:bg-orange-50 hover:border-orange-300 hover:text-orange-600 transition-all duration-200"
+                            className="flex-1 h-8 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50"
                           >
-                            <Edit className="mr-2 h-4 w-4" /> Sửa
+                            <Edit className="w-4 h-4" />
                           </Button>
                           <Button
-                            variant="outline"
+                            variant="ghost"
+                            size="sm"
                             onClick={() => openDeleteFn(s)}
-                            className="w-full hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-all duration-200"
+                            className="flex-1 h-8 text-gray-500 hover:text-red-600 hover:bg-red-50"
                           >
-                            <Trash className="mr-2 h-4 w-4" /> Xóa
+                            <Trash className="w-4 h-4" />
                           </Button>
-                        </>
+                        </div>
                       )}
                     </div>
                   </div>
                 </CardContent>
-
-                {/* Bottom gradient accent */}
-                <div className={`h-1 bg-gradient-to-r ${statusConfig.gradient} opacity-60`} />
               </Card>
             );
           })}
@@ -430,11 +394,11 @@ export function ClassSessionsPage({
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
-              {editingSession ? "Cập Nhật Buổi Học" : "Tạo Buổi Học"}
+            <DialogTitle className="text-2xl font-bold text-gray-900">
+              {editingSession ? "Cập Nhật Buổi Học" : "Tạo Buổi Học Mới"}
             </DialogTitle>
             <DialogDescription>
-              {editingSession ? "Chỉnh sửa thông tin buổi học" : "Tạo buổi học mới cho lớp"}
+              {editingSession ? "Thay đổi thông tin chi tiết cho buổi học này." : "Điền thông tin để lên lịch buổi học mới."}
             </DialogDescription>
           </DialogHeader>
           <ClassSessionForm
@@ -455,6 +419,12 @@ export function ClassSessionsPage({
               setIsDialogOpen(false);
               setEditingSession(null);
               await fetchSessions();
+              toast({
+                title: editingSession ? "Đã cập nhật" : "Đã tạo mới",
+                description: `Buổi học đã được ${editingSession ? "cập nhật" : "lên lịch"} thành công.`,
+                variant: "default",
+                className: "bg-green-50 border-green-200 text-green-900"
+              });
             }}
           />
         </DialogContent>
@@ -465,20 +435,20 @@ export function ClassSessionsPage({
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-red-600">
               <AlertCircle className="w-5 h-5" />
-              Xác nhận xóa
+              Xóa buổi học này?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Bạn có chắc chắn muốn xóa buổi học <strong>"{deleteTarget?.title}"</strong>?
-              Hành động này không thể hoàn tác.
+              Bạn chắc chắn muốn xóa <strong>"{deleteTarget?.title}"</strong>?
+              <br />Hành động này sẽ xóa vĩnh viễn dữ liệu buổi học và không thể khôi phục.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogCancel>Hủy bỏ</AlertDialogCancel>
             <AlertDialogAction
               onClick={doDelete}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-red-600 hover:bg-red-700 text-white"
             >
-              Xóa
+              Xóa vĩnh viễn
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

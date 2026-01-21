@@ -22,31 +22,31 @@ export default function StudentAnalyticsPage({
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl space-y-6 animate-in fade-in duration-500">
       {/* Gradient Header Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-8 shadow-2xl">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,255,255,0.1),transparent_50%)]" />
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 lg:p-10 shadow-xl">
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 h-80 w-80 rounded-full bg-indigo-500/20 blur-3xl"></div>
 
-        <div className="relative flex justify-between items-start">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
+        <div className="relative flex flex-col md:flex-row justify-between items-start gap-6">
+          <div className="flex-1 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm">
                 <Trophy className="w-6 h-6 text-white" />
               </div>
-              <h1 className="text-3xl font-bold text-white drop-shadow-lg">
+              <h1 className="text-3xl font-bold text-white drop-shadow-sm sm:text-4xl">
                 Kết Quả Học Tập
               </h1>
             </div>
-            <p className="text-white/90 text-lg font-medium flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
-              Điểm số, điểm danh và tiến độ học tập của bạn
+            <p className="text-blue-100 text-lg font-medium flex items-center gap-2 max-w-2xl">
+              <TrendingUp className="w-5 h-5 text-blue-200" />
+              Theo dõi điểm số, điểm danh và tiến độ học tập của bạn.
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 w-full md:w-auto">
             <Link href={`/classes/${classId}`}>
               <Button
-                variant="ghost"
-                className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm transition-all duration-200"
+                variant="outline"
+                className="bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-sm transition-all duration-200"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" /> Quay Lại
               </Button>
@@ -57,16 +57,20 @@ export default function StudentAnalyticsPage({
 
       <StudentDashboard classId={classId} studentId={user.id} />
 
-      {/* Detailed Breakdown */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Tổng Quan Tiến Độ</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-gray-600">
-          <p>
-            Xem chi tiết phân tích về bài tập và điểm danh các buổi học
-            trong lớp.
-          </p>
+      {/* Info Card */}
+      <Card className="border-l-4 border-l-indigo-500 shadow-md">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-indigo-50 rounded-lg">
+              <TrendingUp className="w-5 h-5 text-indigo-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">Mẹo Cải Thiện Điểm Số</h3>
+              <p className="text-sm text-gray-500 mt-1">
+                Hãy hoàn thành bài tập sớm để nhận điểm thưởng và theo dõi biểu đồ tiến độ thường xuyên để điều chỉnh cách học.
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
