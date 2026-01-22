@@ -11,6 +11,7 @@ import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, GraduationCap, Clo
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, isSameMonth, addMonths, subMonths, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
 import Link from "next/link";
+import { MeshGradientHeader } from "@/components/ui/mesh-gradient-header";
 
 type Session = {
     id: number;
@@ -165,19 +166,19 @@ export default function TACalendarPage() {
         <div className="min-h-screen bg-gray-50">
             <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 pt-4 space-y-6">
                 {/* Header */}
-                <div className="overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600 text-white shadow-2xl">
-                    <div className="p-8 space-y-6">
+                <MeshGradientHeader>
+                    <div className="space-y-6">
                         <div className="flex items-center gap-3">
-                            <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
+                            <div className="p-3 text-white rounded-xl bg-white/20 backdrop-blur-sm">
                                 <CalendarIcon className="w-6 h-6" />
                             </div>
-                            <h1 className="text-3xl font-bold">Lịch Trợ Giảng</h1>
+                            <h1 className="text-3xl font-bold text-white">Lịch Trợ Giảng</h1>
                         </div>
                         <p className="text-white/90 max-w-3xl">
                             Xem tất cả các buổi học trong tháng từ các lớp bạn hỗ trợ
                         </p>
                     </div>
-                </div>
+                </MeshGradientHeader>
 
                 {/* TA Selector - Admin Only */}
                 {userRole === "admin" && (

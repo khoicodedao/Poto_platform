@@ -9,6 +9,7 @@ import { SessionTimeline } from "@/components/ta/session-timeline";
 import { useToast } from "@/hooks/use-toast";
 import { BookOpen, Calendar, Users, GraduationCap } from "lucide-react";
 import { startOfToday, endOfToday } from "date-fns";
+import { MeshGradientHeader } from "@/components/ui/mesh-gradient-header";
 
 type TAClass = {
     id: number;
@@ -137,19 +138,19 @@ export default function TADashboardPage() {
         <div className="min-h-screen bg-gray-50">
             <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 pt-4 space-y-6">
                 {/* Header */}
-                <div className="overflow-hidden rounded-3xl bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 text-white shadow-2xl">
-                    <div className="p-8 space-y-6">
+                <MeshGradientHeader>
+                    <div className="space-y-6">
                         <div className="flex items-center gap-3">
-                            <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
+                            <div className="p-3 text-white rounded-xl bg-white/20 backdrop-blur-sm">
                                 <GraduationCap className="w-6 h-6" />
                             </div>
-                            <h1 className="text-3xl font-bold">Dashboard Trợ Giảng</h1>
+                            <h1 className="text-3xl font-bold text-white">Dashboard Trợ Giảng</h1>
                         </div>
                         <p className="text-white/90 max-w-3xl">
                             Quản lý và theo dõi các buổi học từ tất cả các lớp bạn hỗ trợ
                         </p>
                     </div>
-                </div>
+                </MeshGradientHeader>
 
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

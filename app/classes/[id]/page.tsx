@@ -31,6 +31,7 @@ import {
   UserPlus,
   ChevronRight,
 } from "lucide-react";
+import { MeshGradientSection } from "@/components/ui/mesh-gradient-header";
 
 type PageProps = {
   params: { id: string };
@@ -177,11 +178,8 @@ export default async function ClassDetailPage({ params }: PageProps) {
         </nav>
 
         {/* Hero Section */}
-        <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-xl">
-          <div className="absolute top-0 right-0 -mr-20 -mt-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 -ml-20 -mb-20 h-80 w-80 rounded-full bg-indigo-500/20 blur-3xl"></div>
-
-          <div className="relative p-8 lg:p-12 space-y-8">
+        <MeshGradientSection>
+          <div className="space-y-8">
             <div className="flex flex-wrap items-center gap-3">
               <Badge className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-md px-4 py-1.5 text-sm font-medium transition-colors">
                 Phòng {roomLabel}
@@ -277,7 +275,7 @@ export default async function ClassDetailPage({ params }: PageProps) {
               </Link>
             </div>
           </div>
-        </section>
+        </MeshGradientSection>
 
         {/* Stats Grid */}
         <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">

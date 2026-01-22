@@ -52,6 +52,7 @@ import { DeleteMaterialDialog } from "@/components/learning-materials/delete-mat
 import { EditUnitDialog } from "@/components/learning-materials/edit-unit-dialog";
 import { DeleteUnitDialog } from "@/components/learning-materials/delete-unit-dialog";
 import { MaterialViewer } from "@/components/learning-materials/material-viewer";
+import { MeshGradientHeader } from "@/components/ui/mesh-gradient-header";
 
 type Material = {
     id: number;
@@ -170,11 +171,8 @@ export default function LearningMaterialsPage() {
         <div className="min-h-screen bg-gray-50">
             <main className="mx-auto max-w-7xl px4 py-8 sm:px-6 lg:px-8 pt-4 space-y-6">
                 {/* Header */}
-                <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 lg:p-10 shadow-xl">
-                    <div className="absolute top-0 right-0 -mr-20 -mt-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
-                    <div className="absolute bottom-0 left-0 -ml-20 -mb-20 h-80 w-80 rounded-full bg-indigo-500/20 blur-3xl"></div>
-
-                    <div className="relative flex flex-col md:flex-row justify-between items-start gap-6">
+                <MeshGradientHeader>
+                    <div className="flex flex-col md:flex-row justify-between items-start gap-6">
                         <div className="flex-1 space-y-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm">
@@ -214,7 +212,7 @@ export default function LearningMaterialsPage() {
                             )}
                         </div>
                     </div>
-                </div>
+                </MeshGradientHeader>
 
                 {/* Units List */}
                 {isLoading ? (

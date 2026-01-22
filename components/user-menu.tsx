@@ -88,7 +88,7 @@ export default function UserMenu({ user }: UserMenuProps) {
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href="/ta/calendar">
-                <CalendarIcon className="mr-2 h-4 w-4" />
+                <CalendarIcon className="mr-2 h-4 w-4 text-white" />
                 <span>Lịch Trợ Giảng</span>
               </Link>
             </DropdownMenuItem>

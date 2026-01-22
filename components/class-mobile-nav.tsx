@@ -83,11 +83,13 @@ export function ClassMobileNav() {
           <Menu className="h-5 w-5" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-72">
-        <SheetHeader>
-          <SheetTitle>Chức Năng Lớp Học</SheetTitle>
+      <SheetContent side="left" className="w-80 bg-gradient-to-br from-gray-50 to-blue-50">
+        <SheetHeader className="border-b border-gray-200 pb-4">
+          <SheetTitle className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            Chức Năng Lớp Học
+          </SheetTitle>
         </SheetHeader>
-        <nav className="mt-6 space-y-1">
+        <nav className="mt-6 space-y-2">
           {classFeatures.map((feature) => {
             const Icon = feature.icon;
             const href = `/classes/${classId}${feature.href}`;
@@ -96,16 +98,34 @@ export function ClassMobileNav() {
               <Link key={href} href={href} onClick={() => setIsOpen(false)}>
                 <div
                   className={clsx(
-                    "flex gap-3 rounded-lg p-3 transition-colors",
+                    "group flex gap-3 rounded-xl p-4 transition-all duration-300 border-2",
                     isActive
-                      ? "bg-blue-50 text-blue-600"
-                      : "text-gray-700 hover:bg-gray-100"
+                      ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg border-indigo-300 scale-105"
+                      : "bg-white text-gray-700 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 border-gray-200 hover:border-indigo-300 hover:shadow-md hover:scale-105"
                   )}
                 >
-                  <Icon className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                  <div className={clsx(
+                    "flex-shrink-0 p-2 rounded-lg transition-all",
+                    isActive
+                      ? "bg-white/20"
+                      : "bg-indigo-50 group-hover:bg-indigo-100"
+                  )}>
+                    <Icon className={clsx(
+                      "h-5 w-5 transition-transform group-hover:scale-110",
+                      isActive ? "text-white" : "text-indigo-600"
+                    )} />
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm">{feature.label}</p>
-                    <p className="text-xs text-gray-500 truncate">
+                    <p className={clsx(
+                      "font-bold text-sm transition-colors",
+                      isActive ? "text-white" : "text-gray-900 group-hover:text-indigo-700"
+                    )}>
+                      {feature.label}
+                    </p>
+                    <p className={clsx(
+                      "text-xs truncate transition-colors",
+                      isActive ? "text-white/80" : "text-gray-500 group-hover:text-indigo-600"
+                    )}>
                       {feature.description}
                     </p>
                   </div>

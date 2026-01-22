@@ -34,6 +34,8 @@ import { calculateSessionStatus } from "@/lib/utils/session-status";
 import { MascotHeader } from "@/components/gamification/mascot";
 import { StreakDisplay } from "@/components/gamification/streak-counter";
 import { XPBar, CircularXP } from "@/components/gamification/xp-bar";
+import { MeshGradientSection } from "@/components/ui/mesh-gradient-header";
+import { MeshGradientCard } from "@/components/ui/mesh-gradient-card";
 
 const quickActions = [
   {
@@ -161,7 +163,7 @@ export default async function Dashboard() {
       <div className="mt-2">
         <MascotHeader userName={user.name} />
       </div>
-      <section className="mt-2 rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 text-white shadow-xl">
+      <MeshGradientSection className="mt-2">
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm uppercase tracking-widest text-white/70">
@@ -188,7 +190,7 @@ export default async function Dashboard() {
             ))}
           </div>
         </div>
-      </section>
+      </MeshGradientSection>
 
       {/* Gamification: Streak & XP Cards */}
       <section className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -228,17 +230,17 @@ export default async function Dashboard() {
       {/* URGENT: Imminent Sessions Alert (Within 15 Minutes) */}
       {imminentSessionsData.length > 0 && (
         <section className="mt-6">
-          <Card className="border-4 border-red-500 bg-gradient-to-br from-red-50 via-orange-50 to-red-100 shadow-2xl">
+          <MeshGradientCard variant="urgent">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-red-600 to-orange-600 shadow-xl">
+                <div className="p-3 rounded-xl bg-white/20 backdrop-blur-md shadow-xl">
                   <AlertTriangle className="w-7 h-7 text-white" />
                 </div>
                 <div className="flex-1">
-                  <CardTitle className="text-2xl bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent flex items-center gap-2">
-                    🚨 KHẨN CẤP: Buổi Học Sắp Bắt Đầu!
+                  <CardTitle className="text-2xl font-bold text-white">
+                    KHẨN CẤP: Buổi Học Sắp Bắt Đầu!
                   </CardTitle>
-                  <CardDescription className="text-red-700 font-bold text-base">
+                  <CardDescription className="text-white/90 font-bold text-base">
                     {imminentSessionsData.length} buổi học sẽ bắt đầu trong vòng 15 phút tới
                   </CardDescription>
                 </div>
@@ -253,17 +255,17 @@ export default async function Dashboard() {
                 return (
                   <div
                     key={session.sessionId}
-                    className="flex items-center justify-between rounded-xl border-4 border-red-400 p-5 shadow-2xl transition-all hover:shadow-red-300 hover:scale-[1.03] bg-gradient-to-r from-red-100 via-white to-orange-100"
+                    className="flex items-center justify-between rounded-xl border-2 border-white/30 p-5 shadow-xl transition-all hover:shadow-2xl hover:scale-[1.02] bg-white/90 backdrop-blur-sm"
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2">
                         {session.calculatedStatus === 'in-progress' ? (
-                          <Badge className="bg-green-600 text-white text-sm px-3 py-1 shadow-lg font-bold">
+                          <Badge className="bg-gradient-to-r from-purple-500 to-pink-600 text-white text-sm px-4 py-1.5 shadow-xl font-bold border-2 border-white/40 backdrop-blur-md animate-pulse">
                             ⚡ ĐANG DIỄN RA - VÀO NGAY!
                           </Badge>
                         ) : (
-                          <Badge className="bg-red-600 text-white text-sm px-3 py-1 shadow-lg font-bold">
+                          <Badge className="bg-gradient-to-r from-red-500 to-orange-600 text-white text-sm px-4 py-1.5 shadow-xl font-bold border-2 border-white/40 backdrop-blur-md animate-pulse">
                             🔥 CÒN {minutesUntil} PHÚT {secondsUntil} GIÂY
                           </Badge>
                         )}
@@ -296,24 +298,24 @@ export default async function Dashboard() {
                 );
               })}
             </CardContent>
-          </Card>
+          </MeshGradientCard>
         </section>
       )}
 
       {/* Upcoming Sessions Alert */}
       {upcomingSessionsData.length > 0 && (
         <section className="mt-6">
-          <Card className="border-2 border-amber-300 bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 shadow-xl animate-in fade-in slide-in-from-top-2">
+          <MeshGradientCard variant="warning">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 shadow-lg animate-pulse">
+                <div className="p-3 rounded-xl bg-white/20 backdrop-blur-md shadow-lg animate-pulse">
                   <Bell className="w-6 h-6 text-white" />
                 </div>
                 <div className="flex-1">
-                  <CardTitle className="text-xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+                  <CardTitle className="text-xl font-bold text-white drop-shadow-lg">
                     🔔 Buổi Học Sắp Diễn Ra
                   </CardTitle>
-                  <CardDescription className="text-amber-700">
+                  <CardDescription className="text-white/90 font-semibold">
                     Bạn có {upcomingSessionsData.length} buổi học trong vòng 24 giờ tới
                   </CardDescription>
                 </div>
@@ -330,20 +332,20 @@ export default async function Dashboard() {
                   <div
                     key={session.sessionId}
                     className={`flex items-center justify-between rounded-xl border-2 p-4 shadow-md transition-all hover:shadow-lg hover:scale-[1.02] ${isStartingSoon
-                      ? 'border-red-400 bg-gradient-to-r from-red-50 to-orange-50 animate-pulse'
-                      : 'border-amber-300 bg-white'
+                      ? 'border-red-300 bg-white/95 backdrop-blur-sm animate-pulse'
+                      : 'border-white/30 bg-white/90 backdrop-blur-sm'
                       }`}
                     style={{ animationDelay: `${index * 100}ms` }}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         {isStartingSoon && (
-                          <Badge className="bg-red-500 text-white font-bold animate-bounce">
+                          <Badge className="bg-gradient-to-r from-red-500 to-orange-600 text-white font-bold text-xs px-3 py-1 shadow-lg border-2 border-white/30 backdrop-blur-sm animate-bounce">
                             🔥 SẮP BẮT ĐẦU
                           </Badge>
                         )}
                         {session.calculatedStatus === 'in-progress' && (
-                          <Badge className="bg-green-500 text-white font-bold animate-pulse">
+                          <Badge className="bg-gradient-to-r from-purple-500 to-pink-600 text-white font-bold text-xs px-3 py-1 shadow-lg border-2 border-white/30 backdrop-blur-sm animate-pulse">
                             ⚡ ĐANG DIỄN RA
                           </Badge>
                         )}
@@ -373,7 +375,7 @@ export default async function Dashboard() {
                     <Link href={`/classroom/${session.classId}`}>
                       <Button
                         className={`ml-4 font-bold shadow-lg ${session.calculatedStatus === 'in-progress'
-                          ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 animate-pulse'
+                          ? 'bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 animate-pulse'
                           : isStartingSoon
                             ? 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600'
                             : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600'
@@ -388,13 +390,13 @@ export default async function Dashboard() {
               })}
               {upcomingSessionsData.length > 3 && (
                 <Link href="/classes" className="block">
-                  <Button variant="outline" className="w-full mt-2 border-amber-300 text-amber-700 hover:bg-amber-50">
+                  <Button variant="outline" className="w-full mt-2 border-white/40 text-white hover:bg-white/20 backdrop-blur-sm font-semibold">
                     Xem tất cả {upcomingSessionsData.length} buổi học sắp diễn ra
                   </Button>
                 </Link>
               )}
             </CardContent>
-          </Card>
+          </MeshGradientCard>
         </section>
       )}
 

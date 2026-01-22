@@ -19,6 +19,7 @@ import {
     Shield,
     FileText
 } from "lucide-react";
+import { MeshGradientSection } from "@/components/ui/mesh-gradient-header";
 
 interface DashboardStats {
     totalUsers: number;
@@ -179,7 +180,7 @@ export default function AdminDashboardPage() {
     return (
         <div className="container mx-auto p-4 pb-12 sm:px-6 lg:px-8 space-y-8 animate-in fade-in duration-500">
             {/* Header Section */}
-            <section className="mt-2 rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 text-white shadow-xl relative overflow-hidden">
+            <MeshGradientSection className="mt-2">
                 <div className="absolute top-0 right-0 p-12 opacity-10 transform translate-x-10 -translate-y-10">
                     <Shield className="w-64 h-64 text-white" />
                 </div>
@@ -202,7 +203,7 @@ export default function AdminDashboardPage() {
                         </p>
                     </div>
                 </div>
-            </section>
+            </MeshGradientSection>
 
             {/* Alert for students needing attention */}
             {stats && stats.studentsNeedAttention > 0 && (

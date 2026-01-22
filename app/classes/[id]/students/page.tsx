@@ -5,6 +5,7 @@ import { StudentsList } from "@/components/students-list";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft, Users, GraduationCap } from "lucide-react";
+import { MeshGradientHeader } from "@/components/ui/mesh-gradient-header";
 
 export default function ClassStudentsPage() {
   const params = useParams();
@@ -13,11 +14,8 @@ export default function ClassStudentsPage() {
   return (
     <div className="container mx-auto p-6 pt-4 space-y-6 animate-in fade-in duration-500">
       {/* Gradient Header Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-8 shadow-2xl">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,255,255,0.1),transparent_50%)]" />
-
-        <div className="relative flex justify-between items-start">
+      <MeshGradientHeader>
+        <div className="flex justify-between items-start">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-3">
               <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
@@ -44,7 +42,7 @@ export default function ClassStudentsPage() {
             </Link>
           </div>
         </div>
-      </div>
+      </MeshGradientHeader>
 
       <StudentsList classId={classId} />
     </div>

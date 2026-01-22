@@ -18,6 +18,7 @@ import {
   FolderOpen,
   Sparkles,
 } from "lucide-react";
+import { ClassMobileNav } from "@/components/class-mobile-nav";
 
 const classNavItems = [
   {
@@ -26,6 +27,7 @@ const classNavItems = [
     href: "",
     description: "Dashboard lớp",
     teacherOnly: false,
+    color: "text-blue-400", // Blue for home
   },
   {
     icon: Calendar,
@@ -33,6 +35,7 @@ const classNavItems = [
     href: "/sessions",
     description: "Lên lịch & điểm danh",
     teacherOnly: false,
+    color: "text-green-400", // Green for calendar
   },
   {
     icon: FileText,
@@ -40,6 +43,7 @@ const classNavItems = [
     href: "/assignments",
     description: "Quản lý bài tập",
     teacherOnly: false,
+    color: "text-orange-400", // Orange for assignments
   },
   {
     icon: BarChart3,
@@ -47,6 +51,7 @@ const classNavItems = [
     href: "/analytics",
     description: "Xem tiến độ",
     teacherOnly: true, // Only for teachers
+    color: "text-purple-400", // Purple for analytics
   },
   {
     icon: Users,
@@ -54,6 +59,7 @@ const classNavItems = [
     href: "/students",
     description: "Danh sách HS",
     teacherOnly: true, // Only for teachers
+    color: "text-teal-400", // Teal for students
   },
   {
     icon: Bell,
@@ -61,6 +67,7 @@ const classNavItems = [
     href: "/notifications",
     description: "Gửi thông báo",
     teacherOnly: true, // Only for teachers
+    color: "text-pink-400", // Pink for notifications
   },
   {
     icon: FolderOpen,
@@ -68,6 +75,7 @@ const classNavItems = [
     href: "/materials",
     description: "Video & tài liệu",
     teacherOnly: false,
+    color: "text-amber-400", // Amber for materials
   },
   {
     icon: BookOpen,
@@ -75,6 +83,7 @@ const classNavItems = [
     href: "/files",
     description: "Chia sẻ tài liệu",
     teacherOnly: false,
+    color: "text-cyan-400", // Cyan for files
   },
   {
     icon: Sparkles,
@@ -82,6 +91,7 @@ const classNavItems = [
     href: "/ai-topics",
     description: "Chủ đề chat AI",
     teacherOnly: true, // Only for teachers
+    color: "text-yellow-400", // Yellow for AI
   },
   {
     icon: Trophy,
@@ -89,6 +99,7 @@ const classNavItems = [
     href: "/my-performance",
     description: "Kết quả học tập",
     teacherOnly: false,
+    color: "text-yellow-500", // Gold for trophy
   },
   {
     icon: Settings,
@@ -96,6 +107,7 @@ const classNavItems = [
     href: "/edit",
     description: "Cài đặt lớp học",
     teacherOnly: true, // Only for teachers
+    color: "text-gray-300", // Gray for settings
   },
 ];
 
@@ -134,40 +146,48 @@ export function ClassNavTabs({ className }: ClassNavTabsProps) {
   );
 
   return (
-    <div className="border-b border-indigo-500 bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-700 shadow-md">
-      <div className="mx-auto max-w-[100vw] flex justify-center items-center px-4 sm:px-6 lg:px-8">
-        <div className="flex gap-1 overflow-x-auto scrollbar-hide py-1">
-          {visibleNavItems.map((item) => {
-            const Icon = item.icon;
-            const href =
-              item.href === ""
-                ? `/classes/${classId}`
-                : `/classes/${classId}${item.href}`;
-            const isActive =
-              item.href === ""
-                ? pathname === `/classes/${classId}`
-                : pathname?.includes(item.href);
+    <div className="sticky top-0 z-40 border-b border-gray-200 bg-gray-100/90 backdrop-blur-md shadow-sm">
+      <div className="relative w-full flex items-center px-2 lg:px-4">
 
-            const label =
-              item.label === "Trang Chủ" && className ? className : item.label;
+        {/* Mobile Menu Trigger */}
+        <div className="sm:hidden flex-shrink-0 mr-1">
+          <ClassMobileNav />
+        </div>
 
-            return (
-              <Link key={href} href={href} className="flex-shrink-0">
-                <button
-                  className={clsx(
-                    "flex items-center gap-2 whitespace-nowrap rounded-t-lg px-4 py-3 text-sm font-medium transition-all duration-200",
-                    isActive
-                      ? "bg-white text-indigo-700 shadow-sm translate-y-0.5"
-                      : "text-indigo-100 hover:bg-white/10 hover:text-white"
-                  )}
-                >
-                  <Icon className={clsx("h-4 w-4", isActive ? "text-indigo-600" : "text-indigo-200")} />
-                  <span className="hidden sm:inline font-bold">{label}</span>
-                  <span className="sm:hidden text-xs">{label}</span>
-                </button>
-              </Link>
-            );
-          })}
+        <div className="flex-1 min-w-0">
+          <div className="flex gap-1 lg:gap-2 overflow-x-auto py-3 justify-start lg:justify-center [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400">
+            {visibleNavItems.map((item) => {
+              const Icon = item.icon;
+              const href =
+                item.href === ""
+                  ? `/classes/${classId}`
+                  : `/classes/${classId}${item.href}`;
+              const isActive =
+                item.href === ""
+                  ? pathname === `/classes/${classId}`
+                  : pathname?.includes(item.href);
+
+              const label =
+                item.label === "Trang Chủ" && className ? className : item.label;
+
+              return (
+                <Link key={href} href={href} className="flex-shrink-0">
+                  <button
+                    className={clsx(
+                      "group flex items-center gap-1.5 lg:gap-2 whitespace-nowrap rounded-xl px-2.5 lg:px-4 py-2 text-sm font-bold transition-all duration-200 border",
+                      isActive
+                        ? "bg-white text-indigo-700 border-indigo-200 shadow-sm"
+                        : "bg-transparent text-gray-600 border-transparent hover:bg-gray-200 hover:text-gray-900"
+                    )}
+                  >
+                    <Icon className={clsx("h-4 w-4 transition-transform group-hover:scale-110", isActive ? "text-indigo-600" : item.color)} />
+                    <span className="hidden sm:inline">{label}</span>
+                    <span className="sm:hidden text-xs">{label}</span>
+                  </button>
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
