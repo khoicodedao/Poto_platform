@@ -32,6 +32,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { MeshGradientSection } from "@/components/ui/mesh-gradient-header";
+import { CustomBreadcrumb } from "@/components/custom-breadcrumb";
 
 type PageProps = {
   params: { id: string };
@@ -165,17 +166,12 @@ export default async function ClassDetailPage({ params }: PageProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50/30 via-purple-50/20 to-pink-50/30 pb-12">
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8 animate-in fade-in duration-500">
-        <nav className="flex items-center text-sm font-medium text-gray-500 mb-8" aria-label="Breadcrumb">
-          <Link href="/" className="hover:text-indigo-600 transition-colors">
-            Trang chủ
-          </Link>
-          <ChevronRight className="mx-2 h-4 w-4 text-gray-400" />
-          <Link href="/classes" className="hover:text-indigo-600 transition-colors">
-            Lớp học
-          </Link>
-          <ChevronRight className="mx-2 h-4 w-4 text-gray-400" />
-          <span className="text-gray-900 font-semibold">{detail.name}</span>
-        </nav>
+        <CustomBreadcrumb
+          items={[
+            { label: "Lớp học", href: "/classes" },
+            { label: detail.name },
+          ]}
+        />
 
         {/* Hero Section */}
         <MeshGradientSection>

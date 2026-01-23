@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, MessageCircle, FileText, Send, PenTool } from "lucide-react";
+import { Users, MessageCircle, FileText, Send, PenTool, Video } from "lucide-react";
 
 import VideoGrid from "@/components/video-grid";
 import VideoControls from "@/components/video-controls";
@@ -40,7 +40,7 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [classFiles, setClassFiles] = useState<any[]>([]);
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const [currentUserId] = useState(
     () => `student-${Math.random().toString(36).slice(2, 8)}`
@@ -290,7 +290,7 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
       const result = await sendChatMessage?.(classId, chatMessage);
       if (!result || !result.success) return;
 
-      setChatMessages((prev) => [...prev, result.message]);
+      setChatMessages((prev) => result.message ? [...prev, result.message] : prev);
       setChatMessage("");
     } catch (error) {
       console.error("Error sending message:", error);
@@ -322,10 +322,16 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
 
   if (!isConnected) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center text-white">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4" />
-          <p>Đang kết nối vào lớp học...</p>
+      <div className="h-[calc(100vh-120px)] bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40 flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative mb-6">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-200 border-t-indigo-600 mx-auto" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Video className="h-6 w-6 text-indigo-600 animate-pulse" />
+            </div>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Đang kết nối vào lớp học...</h2>
+          <p className="text-gray-600">Vui lòng đợi trong giây lát</p>
         </div>
       </div>
     );
@@ -333,20 +339,32 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
 
   return (
     <>
-      <div className="min-h-screen bg-gray-900">
-        <header className="bg-gray-800 border-b border-gray-700">
+      <div className="h-[calc(100vh-120px)] flex flex-col bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40 overflow-hidden">
+        <header className="flex-shrink-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 border-b border-white/10 shadow-lg">
           <div className="px-4 py-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <h1 className="text-white font-semibold">
-                  Lớp học trực tuyến - Phòng {params.id}
-                </h1>
-                <Badge variant="destructive" className="animate-pulse">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md">
+                    <Video className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-white font-bold text-lg">
+                      Lớp học trực tuyến - Phòng {params.id}
+                    </h1>
+                    <p className="text-blue-100 text-xs">Phiên học trực tiếp</p>
+                  </div>
+                </div>
+                <Badge className="bg-red-500 text-white border-0 animate-pulse shadow-lg">
+                  <div className="w-2 h-2 bg-white rounded-full mr-1.5 animate-ping" />
                   LIVE
                 </Badge>
               </div>
-              <div className="text-white text-sm">
-                {participants.length} người tham gia
+              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-full px-4 py-2">
+                <Users className="h-4 w-4 text-white" />
+                <span className="text-white text-sm font-semibold">
+                  {participants.length} người
+                </span>
               </div>
             </div>
           </div>
@@ -355,22 +373,21 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
         {/* Auto-attendance notification */}
         {attendanceMessage && (
           <div
-            className={`px-4 py-3 ${attendanceMessage.type === "success"
-              ? "bg-green-600"
+            className={`flex-shrink-0 px-4 py-2 ${attendanceMessage.type === "success"
+              ? "bg-gradient-to-r from-emerald-500 to-green-500"
               : attendanceMessage.type === "info"
-                ? "bg-blue-600"
-                : "bg-red-600"
-              } text-white text-center text-sm font-medium animate-in slide-in-from-top duration-300`}
+                ? "bg-gradient-to-r from-blue-500 to-indigo-500"
+                : "bg-gradient-to-r from-red-500 to-rose-500"
+              } text-white text-center text-sm font-medium animate-in slide-in-from-top duration-300 shadow-md`}
           >
             {attendanceMessage.text}
           </div>
         )}
 
-
-        <div className="flex h-[calc(100vh-73px)]">
+        <div className="flex flex-1 min-h-0">
           {/* LEFT: video */}
-          <div className="flex-1 flex flex-col">
-            <div className="flex-1">
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="flex-1 min-h-0 overflow-hidden">
               <VideoGrid
                 localVideoRef={localVideoRef}
                 participants={participants}
@@ -381,75 +398,93 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
               />
             </div>
 
-            <VideoControls
-              isScreenSharing={isScreenSharing}
-              isAudioEnabled={isAudioEnabled}
-              isVideoEnabled={isVideoEnabled}
-              isRecording={isRecording}
-              isFullscreen={isFullscreen}
-              participantCount={participants.length}
-              isSidebarOpen={isSidebarOpen}
-              onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
-              onToggleAudio={toggleAudio}
-              onToggleVideo={toggleVideo}
-              onToggleRecording={handleToggleRecording}
-              onToggleFullscreen={handleToggleFullscreen}
-              onLeaveCall={handleLeaveCall}
-              onShareScreen={handleShareScreen}
-            />
+            <div className="flex-shrink-0">
+              <VideoControls
+                isScreenSharing={isScreenSharing}
+                isAudioEnabled={isAudioEnabled}
+                isVideoEnabled={isVideoEnabled}
+                isRecording={isRecording}
+                isFullscreen={isFullscreen}
+                participantCount={participants.length}
+                isSidebarOpen={isSidebarOpen}
+                onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
+                onToggleAudio={toggleAudio}
+                onToggleVideo={toggleVideo}
+                onToggleRecording={handleToggleRecording}
+                onToggleFullscreen={handleToggleFullscreen}
+                onLeaveCall={handleLeaveCall}
+                onShareScreen={handleShareScreen}
+              />
+            </div>
           </div>
 
           {/* RIGHT: sidebar */}
           {isSidebarOpen && (
-            <div className="w-80 bg-white border-l border-gray-200 flex flex-col">
+            <div className="w-80 bg-white/80 backdrop-blur-xl border-l border-gray-200/50 flex flex-col shadow-xl min-h-0">
               <Tabs
                 value={sidebarTab}
-                onValueChange={(value) => {
+                onValueChange={async (value) => {
                   if (value === "whiteboard") {
                     setIsWhiteboardOpen(true);
+                    // Tự động share màn hình khi mở bảng trắng
+                    if (!isScreenSharing) {
+                      await handleShareScreen();
+                    }
                     // không đổi sidebarTab để vẫn giữ tab đang xem (vd: chat)
                     return;
                   }
                   setSidebarTab(value);
                 }}
-                className="flex-1 flex flex-col"
+                className="flex-1 flex flex-col min-h-0"
               >
-                <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="chat">
-                    <MessageCircle className="h-4 w-4" />
+                <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-blue-50 to-indigo-50 p-1 rounded-none">
+                  <TabsTrigger
+                    value="chat"
+                    className="data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+                  >
+                    <MessageCircle className="h-4 w-4 text-blue-600" />
                   </TabsTrigger>
-                  <TabsTrigger value="participants">
-                    <Users className="h-4 w-4" />
+                  <TabsTrigger
+                    value="participants"
+                    className="data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+                  >
+                    <Users className="h-4 w-4 text-indigo-600" />
                   </TabsTrigger>
-                  <TabsTrigger value="files">
-                    <FileText className="h-4 w-4" />
+                  <TabsTrigger
+                    value="files"
+                    className="data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+                  >
+                    <FileText className="h-4 w-4 text-purple-600" />
                   </TabsTrigger>
-                  <TabsTrigger value="whiteboard">
-                    <PenTool className="h-4 w-4" />
+                  <TabsTrigger
+                    value="whiteboard"
+                    className="data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+                  >
+                    <PenTool className="h-4 w-4 text-pink-600" />
                   </TabsTrigger>
                 </TabsList>
 
                 {/* Chat */}
-                <TabsContent value="chat" className="flex-1 flex flex-col p-4">
-                  <div className="flex-1 space-y-4 overflow-y-auto mb-4 max-h-96">
+                <TabsContent value="chat" className="flex-1 flex flex-col p-4 min-h-0">
+                  <div className="flex-1 min-h-0 space-y-3 overflow-y-auto mb-4 pr-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400">
                     {chatMessages.map((msg) => (
-                      <div key={msg.id} className="flex space-x-2">
-                        <Avatar className="w-8 h-8">
-                          <AvatarFallback className="text-xs">
+                      <div key={msg.id} className="flex space-x-2 group">
+                        <Avatar className="w-8 h-8 border-2 border-blue-100">
+                          <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-indigo-500 text-white font-bold">
                             {msg.userName?.[0] ?? "U"}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-sm font-medium">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <span className="text-sm font-semibold text-gray-900">
                               {msg.userName}
                             </span>
                             {msg.userRole === "teacher" && (
-                              <Badge variant="secondary" className="text-xs">
+                              <Badge className="text-xs bg-gradient-to-r from-amber-400 to-orange-500 text-white border-0">
                                 Giáo viên
                               </Badge>
                             )}
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-gray-400">
                               {new Date(msg.createdAt).toLocaleTimeString(
                                 "vi-VN",
                                 {
@@ -459,9 +494,11 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
                               )}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-700 mt-1">
-                            {msg.message}
-                          </p>
+                          <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg rounded-tl-none p-3 border border-gray-200 group-hover:border-blue-200 transition-colors">
+                            <p className="text-sm text-gray-700">
+                              {msg.message}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -472,8 +509,9 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
                       placeholder="Nhập tin nhắn..."
                       value={chatMessage}
                       onChange={(e) => setChatMessage(e.target.value)}
+                      className="border-gray-200 focus:border-indigo-300 focus:ring-indigo-200"
                     />
-                    <Button type="submit" size="sm">
+                    <Button type="submit" size="sm" className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-0 shadow-md">
                       <Send className="h-4 w-4" />
                     </Button>
                   </form>
@@ -482,19 +520,19 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
                 {/* Participants */}
                 <TabsContent
                   value="participants"
-                  className="flex-1 p-4 space-y-3 overflow-y-auto"
+                  className="flex-1 min-h-0 p-4 space-y-2 overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400"
                 >
                   {participants.map((p) => (
                     <div
                       key={p.id}
-                      className="flex items-center justify-between"
+                      className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-br from-white to-gray-50 border border-gray-100 hover:border-indigo-200 hover:shadow-sm transition-all"
                     >
                       <div className="flex items-center space-x-3">
-                        <Avatar className="w-8 h-8">
-                          <AvatarFallback>{p.name[0]}</AvatarFallback>
+                        <Avatar className="w-10 h-10 border-2 border-indigo-100">
+                          <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-bold">{p.name[0]}</AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="text-sm font-medium">
+                          <p className="text-sm font-semibold text-gray-900">
                             {p.name} {p.isLocal ? "(Bạn)" : ""}
                           </p>
                           <p className="text-xs text-gray-500 capitalize">
@@ -504,9 +542,9 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
                           </p>
                         </div>
                       </div>
-                      <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-green-500 rounded-full" />
-                        <div className="w-2 h-2 bg-green-500 rounded-full" />
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-sm shadow-emerald-300" />
+                        <span className="text-xs font-medium text-emerald-600">Trực tuyến</span>
                       </div>
                     </div>
                   ))}
@@ -515,20 +553,24 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
                 {/* Files */}
                 <TabsContent
                   value="files"
-                  className="flex-1 p-4 overflow-y-auto space-y-3"
+                  className="flex-1 min-h-0 p-4 overflow-y-auto space-y-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400"
                 >
                   {classFiles.length === 0 ? (
-                    <p className="text-sm text-gray-500">
-                      Chưa có tài liệu nào.
-                    </p>
+                    <div className="py-4">
+                      <FileText className="h-10 w-10 text-gray-300 mb-2" />
+                      <p className="text-sm text-gray-500">Chưa có tài liệu nào.</p>
+                    </div>
                   ) : (
                     classFiles.map((file) => (
-                      <div key={file.id} className="text-sm border rounded p-2">
+                      <div key={file.id} className="group flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-white to-purple-50/30 border border-purple-100 hover:border-purple-200 hover:shadow-sm transition-all">
+                        <div className="p-2 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors">
+                          <FileText className="h-4 w-4 text-purple-600" />
+                        </div>
                         <a
                           href={file.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 underline"
+                          className="flex-1 text-sm font-medium text-gray-900 hover:text-indigo-600 transition-colors truncate"
                         >
                           {file.name}
                         </a>
@@ -544,20 +586,24 @@ export default function ClassroomPage({ params }: { params: { id: string } }) {
 
       {/* WHITEBOARD FULL MÀN HÌNH */}
       {isWhiteboardOpen && (
-        <div className="fixed inset-0 z-50 bg-gray-900">
+        <div className="fixed inset-0 z-50 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
           <div className="flex flex-col h-full">
-            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-700 text-white">
-              <div>
-                <span className="font-semibold">Bảng trắng</span>
-                <span className="ml-2 text-xs text-gray-300">
-                  (Để chia sẻ cho học viên: bấm Share Screen và chọn cửa sổ này
-                  trong LiveKit)
-                </span>
+            <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-lg">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-lg backdrop-blur-md">
+                  <PenTool className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <span className="font-bold text-lg">Bảng trắng</span>
+                  <p className="text-xs text-blue-100">
+                    Để chia sẻ: bấm Share Screen và chọn cửa sổ này trong LiveKit
+                  </p>
+                </div>
               </div>
               <div className="space-x-2">
                 <Button
                   size="sm"
-                  variant="destructive"
+                  className="bg-white/20 hover:bg-white/30 text-white border-white/20 backdrop-blur-md font-semibold transition-all"
                   onClick={() => setIsWhiteboardOpen(false)}
                 >
                   Thoát bảng trắng

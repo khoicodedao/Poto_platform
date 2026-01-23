@@ -38,7 +38,7 @@ export function CustomBreadcrumb({ items }: CustomBreadcrumbProps) {
                         <React.Fragment key={index}>
                             <BreadcrumbItem>
                                 {isLast || !item.href ? (
-                                    <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                                    <BreadcrumbPage className="font-semibold">{item.label}</BreadcrumbPage>
                                 ) : (
                                     <BreadcrumbLink asChild>
                                         <Link href={item.href}>{item.label}</Link>

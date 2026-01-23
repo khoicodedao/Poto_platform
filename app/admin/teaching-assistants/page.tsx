@@ -23,7 +23,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { UserPlus, Users, BookOpen, Trash2, Settings } from "lucide-react";
+import { UserPlus, Users, BookOpen, Trash2, Settings, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 type TA = {
     id: number;
@@ -194,23 +195,40 @@ export default function TeachingAssistantsPage() {
     }, {} as Record<number, Assignment[]>);
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 pt-4 space-y-6">
-                {/* Header */}
-                <div className="overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white shadow-2xl">
-                    <div className="p-8 space-y-6">
-                        <div className="flex items-center gap-3">
+        <div className="container mx-auto px-4 py-8 max-w-7xl space-y-6 animate-in fade-in duration-500">
+            {/* Header */}
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600 via-pink-600 to-rose-600 p-8 shadow-2xl">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),transparent_50%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,255,255,0.1),transparent_50%)]" />
+
+                <div className="relative flex justify-between items-start">
+                    <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-3">
                             <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
-                                <Users className="w-6 h-6" />
+                                <Users className="w-6 h-6 text-white" />
                             </div>
-                            <h1 className="text-3xl font-bold">Quản Lý Trợ Giảng</h1>
+                            <h1 className="text-3xl font-bold text-white drop-shadow-lg">
+                                Quản Lý Trợ Giảng
+                            </h1>
                         </div>
-                        <p className="text-white/90 max-w-3xl">
+                        <p className="text-white/90 text-lg font-medium mb-4">
                             Gán trợ giảng vào các lớp học và quản lý quyền hạn của họ
                         </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <Link href="/admin/dashboard">
+                            <Button
+                                variant="ghost"
+                                className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm transition-all duration-200"
+                            >
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Quay Lại
+                            </Button>
+                        </Link>
                         <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
                             <DialogTrigger asChild>
-                                <Button className="bg-white text-indigo-700 hover:bg-white/90">
+                                <Button className="bg-white text-purple-600 hover:bg-white/90 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 font-semibold">
                                     <UserPlus className="w-4 h-4 mr-2" />
                                     Gán Trợ Giảng
                                 </Button>
@@ -330,33 +348,45 @@ export default function TeachingAssistantsPage() {
 
                 {/* Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Tổng Trợ Giảng</CardTitle>
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{tas.length}</div>
+                    <Card className="overflow-hidden border shadow-sm hover:shadow-md transition-shadow bg-white">
+                        <CardContent className="p-6">
+                            <div className="flex items-start gap-4">
+                                <div className="p-3 rounded-xl bg-purple-50 border border-purple-100">
+                                    <Users className="h-6 w-6 text-purple-600" />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-2xl font-bold text-gray-900">{tas.length}</h3>
+                                    <p className="text-sm text-gray-600 mt-1">Tổng Trợ Giảng</p>
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
 
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Lớp Học</CardTitle>
-                            <BookOpen className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{classes.length}</div>
+                    <Card className="overflow-hidden border shadow-sm hover:shadow-md transition-shadow bg-white">
+                        <CardContent className="p-6">
+                            <div className="flex items-start gap-4">
+                                <div className="p-3 rounded-xl bg-indigo-50 border border-indigo-100">
+                                    <BookOpen className="h-6 w-6 text-indigo-600" />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-2xl font-bold text-gray-900">{classes.length}</h3>
+                                    <p className="text-sm text-gray-600 mt-1">Lớp Học</p>
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
 
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Assignments</CardTitle>
-                            <Settings className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{assignments.length}</div>
+                    <Card className="overflow-hidden border shadow-sm hover:shadow-md transition-shadow bg-white">
+                        <CardContent className="p-6">
+                            <div className="flex items-start gap-4">
+                                <div className="p-3 rounded-xl bg-pink-50 border border-pink-100">
+                                    <Settings className="h-6 w-6 text-pink-600" />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-2xl font-bold text-gray-900">{assignments.length}</h3>
+                                    <p className="text-sm text-gray-600 mt-1">Assignments</p>
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
                 </div>

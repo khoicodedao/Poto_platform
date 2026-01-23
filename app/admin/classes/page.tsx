@@ -45,6 +45,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+import { CustomBreadcrumb } from "@/components/custom-breadcrumb";
+import { MeshGradientHeader } from "@/components/ui/mesh-gradient-header";
+
 interface Class {
     id: number;
     name: string;
@@ -59,6 +62,7 @@ interface Class {
     isActive: boolean;
     createdAt: string;
 }
+
 
 interface Teacher {
     id: number;
@@ -268,13 +272,11 @@ export default function AdminClassesPage() {
     }
 
     return (
-        <div className="container mx-auto p-6 pt-4 space-y-6 animate-in fade-in duration-500">
+        <div className="container mx-auto px-4 py-8 max-w-7xl space-y-6 animate-in fade-in duration-500">
+            <CustomBreadcrumb items={[{ label: "Admin", href: "/admin/dashboard" }, { label: "Quản Lý Lớp Học" }]} />
             {/* Header */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600 via-pink-600 to-red-600 p-8 shadow-2xl">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),transparent_50%)]" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,255,255,0.1),transparent_50%)]" />
-
-                <div className="relative flex justify-between items-start">
+            <MeshGradientHeader>
+                <div className="flex justify-between items-start">
                     <div className="flex-1">
                         <div className="flex items-center gap-3 mb-3">
                             <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
@@ -308,7 +310,7 @@ export default function AdminClassesPage() {
                         </Button>
                     </div>
                 </div>
-            </div>
+            </MeshGradientHeader>
 
             {/* Classes Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -220,7 +220,7 @@ export default function AdminEnrollStudentsPage() {
     }
 
     return (
-        <div className="container mx-auto p-6 pt-4 space-y-6 animate-in fade-in duration-500">
+        <div className="container mx-auto px-4 py-8 max-w-7xl space-y-6 animate-in fade-in duration-500">
             {/* Header */}
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-600 via-teal-600 to-cyan-600 p-8 shadow-2xl">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),transparent_50%)]" />
@@ -257,14 +257,14 @@ export default function AdminEnrollStudentsPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Enrolled Students */}
-                <Card className="border-2 border-green-200">
-                    <CardHeader className="bg-gradient-to-r from-green-50 to-teal-50">
+                <Card className="border-l-4 border-l-green-500 shadow-md hover:shadow-lg transition-all duration-200">
+                    <CardHeader className="bg-gradient-to-r from-green-50 to-teal-50/50 border-b border-green-100/50 pb-4">
                         <CardTitle className="flex items-center gap-2 text-green-700">
                             <GraduationCap className="w-5 h-5" />
                             Học Sinh Trong Lớp ({enrolledStudents.length})
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4">
+                    <CardContent className="p-4 pt-6">
                         {/* Search Box */}
                         <div className="mb-4">
                             <div className="relative">
@@ -289,11 +289,11 @@ export default function AdminEnrollStudentsPage() {
                                     filtered.map((student) => (
                                         <div
                                             key={student.id}
-                                            className="p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                                            className="p-3 border rounded-lg hover:bg-gray-50 transition-colors bg-white shadow-sm"
                                         >
                                             <div className="flex items-start justify-between mb-2">
                                                 <div className="flex-1">
-                                                    <p className="font-semibold">{student.name}</p>
+                                                    <p className="font-semibold text-gray-800">{student.name}</p>
                                                     <p className="text-sm text-gray-600">{student.email}</p>
                                                 </div>
                                                 <div className="flex gap-1">
@@ -301,29 +301,29 @@ export default function AdminEnrollStudentsPage() {
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => openEditDialog(student)}
-                                                        className="hover:bg-blue-50 hover:border-blue-300"
+                                                        className="hover:bg-blue-50 hover:border-blue-300 h-8 w-8 p-0"
                                                         title="Chỉnh sửa thời gian"
                                                     >
-                                                        <Edit className="w-3 h-3" />
+                                                        <Edit className="w-4 h-4 text-blue-600" />
                                                     </Button>
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => handleUnenroll(student.id)}
-                                                        className="hover:bg-red-50 hover:border-red-300 hover:text-red-600"
+                                                        className="hover:bg-red-50 hover:border-red-300 hover:text-red-600 h-8 w-8 p-0"
                                                         title="Bỏ học sinh khỏi lớp"
                                                     >
-                                                        <UserMinus className="w-3 h-3" />
+                                                        <UserMinus className="w-4 h-4 text-red-600" />
                                                     </Button>
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-4 text-xs text-gray-500">
-                                                <span>
-                                                    📅 Tham gia:{" "}
+                                                <span className="flex items-center gap-1">
+                                                    <Calendar className="w-3 h-3" />
                                                     {new Date(student.enrolledAt).toLocaleDateString("vi-VN")}
                                                 </span>
                                                 {student.endDate && (
-                                                    <Badge variant="outline" className="text-xs">
+                                                    <Badge variant="outline" className="text-xs border-orange-200 bg-orange-50 text-orange-700">
                                                         Kết thúc:{" "}
                                                         {new Date(student.endDate).toLocaleDateString("vi-VN")}
                                                     </Badge>
@@ -346,14 +346,14 @@ export default function AdminEnrollStudentsPage() {
                 </Card>
 
                 {/* Available Students */}
-                <Card className="border-2 border-blue-200">
-                    <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                <Card className="border-l-4 border-l-blue-500 shadow-md hover:shadow-lg transition-all duration-200">
+                    <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50/50 border-b border-blue-100/50 pb-4">
                         <CardTitle className="flex items-center gap-2 text-blue-700">
                             <UserPlus className="w-5 h-5" />
                             Học Sinh Chưa Vào Lớp ({availableStudents.length})
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4">
+                    <CardContent className="p-4 pt-6">
                         {/* Search Box */}
                         <div className="mb-4">
                             <div className="relative">
@@ -378,17 +378,17 @@ export default function AdminEnrollStudentsPage() {
                                     filtered.map((student) => (
                                         <div
                                             key={student.id}
-                                            className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                                            className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors bg-white shadow-sm"
                                         >
                                             <div className="flex-1">
-                                                <p className="font-semibold">{student.name}</p>
+                                                <p className="font-semibold text-gray-800">{student.name}</p>
                                                 <p className="text-sm text-gray-600">{student.email}</p>
                                             </div>
                                             <Button
                                                 variant="outline"
                                                 size="sm"
                                                 onClick={() => openEnrollDialog(student)}
-                                                className="hover:bg-green-50 hover:border-green-300 hover:text-green-600"
+                                                className="hover:bg-green-50 hover:border-green-300 hover:text-green-600 transition-colors"
                                             >
                                                 <UserPlus className="w-4 h-4 mr-1" />
                                                 Thêm

@@ -41,8 +41,12 @@ import {
     GraduationCap,
     UserCheck,
     Shield,
+    Search,
 } from "lucide-react";
 import Link from "next/link";
+
+import { CustomBreadcrumb } from "@/components/custom-breadcrumb";
+import { MeshGradientHeader } from "@/components/ui/mesh-gradient-header";
 
 interface User {
     id: number;
@@ -63,6 +67,8 @@ export default function AdminUsersPage() {
     const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [userRole, setUserRole] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [roleFilter, setRoleFilter] = useState<string>("all");
 
     const [formData, setFormData] = useState({
         email: "",
@@ -228,6 +234,19 @@ export default function AdminUsersPage() {
         }
     };
 
+    // Filter users
+    const filteredUsers = users.filter(user => {
+        // Search filter
+        const matchesSearch = !searchQuery ||
+            user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            user.email.toLowerCase().includes(searchQuery.toLowerCase());
+
+        // Role filter
+        const matchesRole = roleFilter === "all" || user.role === roleFilter;
+
+        return matchesSearch && matchesRole;
+    });
+
     if (isLoading || !userRole) {
         return (
             <div className="container mx-auto p-6 pt-24">
@@ -237,13 +256,11 @@ export default function AdminUsersPage() {
     }
 
     return (
-        <div className="container mx auto p-6 pt-4 space-y-6 animate-in fade-in duration-500">
+        <div className="container mx-auto px-4 py-8 max-w-7xl space-y-6 animate-in fade-in duration-500">
+            <CustomBreadcrumb items={[{ label: "Admin", href: "/admin/dashboard" }, { label: "Quản Lý Người Dùng" }]} />
             {/* Header */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 p-8 shadow-2xl">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),transparent_50%)]" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,255,255,0.1),transparent_50%)]" />
-
-                <div className="relative flex justify-between items-start">
+            <MeshGradientHeader>
+                <div className="flex justify-between items-start">
                     <div className="flex-1">
                         <div className="flex items-center gap-3 mb-3">
                             <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
@@ -277,51 +294,135 @@ export default function AdminUsersPage() {
                         </Button>
                     </div>
                 </div>
-            </div>
+            </MeshGradientHeader>
 
             {/* Users List */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Danh Sách Người Dùng ({users.length})</CardTitle>
+            <Card className="border-l-4 border-l-blue-500 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <CardHeader className="bg-gradient-to-br from-blue-50/50 to-indigo-50/30 border-b border-gray-100">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 shadow-md">
+                            <Users className="h-5 w-5 text-white" />
+                        </div>
+                        <CardTitle className="text-xl">Danh Sách Người Dùng ({filteredUsers.length}/{users.length})</CardTitle>
+                    </div>
+
+                    {/* Search & Filter */}
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Tìm kiếm theo tên, email..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-10"
+                            />
+                        </div>
+                        <div className="flex gap-2 flex-wrap">
+                            <Button
+                                variant={roleFilter === "all" ? "default" : "outline"}
+                                onClick={() => setRoleFilter("all")}
+                                size="sm"
+                                className={roleFilter === "all" ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700" : ""}
+                            >
+                                Tất cả
+                            </Button>
+                            <Button
+                                variant={roleFilter === "admin" ? "default" : "outline"}
+                                onClick={() => setRoleFilter("admin")}
+                                size="sm"
+                                className={roleFilter === "admin" ? "bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700" : ""}
+                            >
+                                Admin
+                            </Button>
+                            <Button
+                                variant={roleFilter === "teacher" ? "default" : "outline"}
+                                onClick={() => setRoleFilter("teacher")}
+                                size="sm"
+                                className={roleFilter === "teacher" ? "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700" : ""}
+                            >
+                                Giáo viên
+                            </Button>
+                            <Button
+                                variant={roleFilter === "teaching_assistant" ? "default" : "outline"}
+                                onClick={() => setRoleFilter("teaching_assistant")}
+                                size="sm"
+                                className={roleFilter === "teaching_assistant" ? "bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700" : ""}
+                            >
+                                Trợ giảng
+                            </Button>
+                            <Button
+                                variant={roleFilter === "student" ? "default" : "outline"}
+                                onClick={() => setRoleFilter("student")}
+                                size="sm"
+                                className={roleFilter === "student" ? "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700" : ""}
+                            >
+                                Học sinh
+                            </Button>
+                        </div>
+                    </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-6">
                     <div className="space-y-3">
-                        {users.map((user) => (
+                        {filteredUsers.map((user) => (
                             <div
                                 key={user.id}
-                                className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-all"
+                                className="group flex items-center justify-between p-5 border border-gray-200 rounded-xl hover:shadow-lg hover:border-indigo-300 transition-all duration-200 bg-white"
                             >
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-3">
-                                        <h3 className="font-semibold text-lg">{user.name}</h3>
-                                        {getRoleBadge(user.role)}
-                                        {!user.isActive && (
-                                            <Badge variant="outline">Không hoạt động</Badge>
+                                <div className="flex items-start gap-4 flex-1">
+                                    {/* Icon based on role */}
+                                    <div className={`p-3 rounded-xl ${user.role === 'admin' ? 'bg-gradient-to-br from-red-50 to-pink-50 border border-red-100' :
+                                        user.role === 'teacher' ? 'bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-100' :
+                                            user.role === 'teaching_assistant' ? 'bg-gradient-to-br from-pink-50 to-purple-50 border border-pink-100' :
+                                                'bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-100'
+                                        }`}>
+                                        {user.role === 'admin' ? (
+                                            <Shield className="w-5 h-5 text-red-600" />
+                                        ) : user.role === 'teacher' ? (
+                                            <UserCheck className="w-5 h-5 text-purple-600" />
+                                        ) : (
+                                            <GraduationCap className="w-5 h-5 text-blue-600" />
                                         )}
                                     </div>
-                                    <p className="text-sm text-gray-600">{user.email}</p>
-                                    <p className="text-xs text-gray-400">
-                                        ID: {user.id} • Tạo:{" "}
-                                        {new Date(user.createdAt).toLocaleDateString("vi-VN")}
-                                    </p>
+
+                                    {/* User Info */}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <h3 className="font-bold text-lg text-gray-900 group-hover:text-indigo-600 transition-colors">
+                                                {user.name}
+                                            </h3>
+                                            {getRoleBadge(user.role)}
+                                            {!user.isActive && (
+                                                <Badge variant="outline" className="bg-gray-100 text-gray-600">
+                                                    Không hoạt động
+                                                </Badge>
+                                            )}
+                                        </div>
+                                        <p className="text-sm text-gray-600 mb-1">{user.email}</p>
+                                        <p className="text-xs text-gray-400">
+                                            ID: {user.id} • Tạo: {new Date(user.createdAt).toLocaleDateString("vi-VN")}
+                                        </p>
+                                    </div>
                                 </div>
 
+                                {/* Actions */}
                                 <div className="flex gap-2">
                                     <Button
                                         variant="outline"
                                         size="sm"
                                         onClick={() => openEdit(user)}
+                                        className="hover:bg-amber-50 hover:border-amber-300 hover:text-amber-700"
                                     >
                                         <Edit className="w-4 h-4 mr-1" />
                                         Sửa
                                     </Button>
                                     <Button
-                                        variant="destructive"
+                                        variant="outline"
                                         size="sm"
                                         onClick={() => {
                                             setDeleteTarget(user);
                                             setIsDeleteOpen(true);
                                         }}
+                                        className="hover:bg-red-50 hover:border-red-300 hover:text-red-700"
                                     >
                                         <Trash className="w-4 h-4 mr-1" />
                                         Xóa
@@ -330,9 +431,19 @@ export default function AdminUsersPage() {
                             </div>
                         ))}
 
-                        {users.length === 0 && (
-                            <div className="text-center py-8 text-gray-500">
-                                Chưa có người dùng nào
+                        {filteredUsers.length === 0 && (
+                            <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-xl">
+                                <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                                <p className="text-gray-500 font-medium">
+                                    {searchQuery || roleFilter !== "all"
+                                        ? "Không tìm thấy người dùng phù hợp"
+                                        : "Chưa có người dùng nào"}
+                                </p>
+                                {(searchQuery || roleFilter !== "all") && (
+                                    <p className="text-sm text-gray-400 mt-1">
+                                        Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm
+                                    </p>
+                                )}
                             </div>
                         )}
                     </div>

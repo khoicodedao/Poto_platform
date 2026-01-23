@@ -178,7 +178,7 @@ export default function AdminDashboardPage() {
     ];
 
     return (
-        <div className="container mx-auto p-4 pb-12 sm:px-6 lg:px-8 space-y-8 animate-in fade-in duration-500">
+        <div className="container mx-auto px-4 py-8 max-w-7xl space-y-8 animate-in fade-in duration-500">
             {/* Header Section */}
             <MeshGradientSection className="mt-2">
                 <div className="absolute top-0 right-0 p-12 opacity-10 transform translate-x-10 -translate-y-10">
