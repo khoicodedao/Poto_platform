@@ -1,18 +1,46 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { useState, useEffect } from "react";
 import { FilesList } from "@/components/files-list";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft, FolderOpen, FileText } from "lucide-react";
 import { MeshGradientHeader } from "@/components/ui/mesh-gradient-header";
+import { ClassBreadcrumb } from "@/components/class-breadcrumb";
 
 export default function ClassFilesPage() {
   const params = useParams();
   const classId = parseInt(params.id as string);
+  const [className, setClassName] = useState<string>("");
+  const [isTeacher, setIsTeacher] = useState(false);
+
+  useEffect(() => {
+    // Fetch class name
+    fetch(`/api/classes/${classId}`)
+      .then(res => res.json())
+      .then(data => setClassName(data.name || `Lớp ${classId}`))
+      .catch(() => setClassName(`Lớp ${classId}`));
+
+    // Fetch user role
+    fetch("/api/auth/me")
+      .then(res => res.json())
+      .then(data => {
+        const role = data.user?.role;
+        setIsTeacher(role === "teacher" || role === "admin");
+      })
+      .catch(() => setIsTeacher(false));
+  }, [classId]);
 
   return (
-    <div className="container mx-auto p-6 pt-4 space-y-6 animate-in fade-in duration-500">
+    <div className="container mx-auto px-4 py-8 max-w-7xl space-y-6 animate-in fade-in duration-500">
+      {/* Breadcrumb Navigation */}
+      <ClassBreadcrumb
+        classId={classId}
+        className={className || `Lớp ${classId}`}
+        currentPage="Tài liệu"
+      />
+
       {/* Gradient Header Banner */}
       <MeshGradientHeader>
         <div className="flex flex-col md:flex-row justify-between items-start gap-6">
@@ -44,7 +72,7 @@ export default function ClassFilesPage() {
         </div>
       </MeshGradientHeader>
 
-      <FilesList classId={classId} isTeacher={true} />
+      <FilesList classId={classId} isTeacher={isTeacher} />
     </div>
   );
 }

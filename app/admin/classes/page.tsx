@@ -315,44 +315,74 @@ export default function AdminClassesPage() {
                 {classes.map((classItem) => (
                     <Card
                         key={classItem.id}
-                        className="hover:shadow-xl transition-all duration-200 hover:scale-105"
+                        className="group border-l-4 border-l-indigo-500 shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 bg-white overflow-hidden"
                     >
-                        <CardHeader>
+                        <CardHeader className="bg-gradient-to-br from-indigo-50/50 to-purple-50/30 border-b border-gray-100 pb-4">
                             <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                    <CardTitle className="text-xl mb-2">
-                                        {classItem.name}
-                                    </CardTitle>
-                                    {classItem.isActive ? (
-                                        <Badge className="bg-green-500">Hoạt động</Badge>
-                                    ) : (
-                                        <Badge variant="outline">Không hoạt động</Badge>
-                                    )}
+                                <div className="flex items-start gap-3 flex-1">
+                                    <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg">
+                                        <BookOpen className="w-5 h-5 text-white" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <CardTitle className="text-xl mb-2 group-hover:text-indigo-600 transition-colors line-clamp-1">
+                                            {classItem.name}
+                                        </CardTitle>
+                                        {classItem.isActive ? (
+                                            <Badge className="bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 border-0 text-white shadow-sm">
+                                                ● Hoạt động
+                                            </Badge>
+                                        ) : (
+                                            <Badge variant="outline" className="bg-gray-100 text-gray-600 border-gray-300">
+                                                ○ Tạm dừng
+                                            </Badge>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </CardHeader>
-                        <CardContent>
-                            <div className="space-y-2 text-sm">
-                                <div className="flex items-center gap-2 text-gray-600">
-                                    <UserCheck className="w-4 h-4" />
-                                    <span className="font-semibold">GV:</span> {classItem.teacherName}
+                        <CardContent className="pt-4">
+                            <div className="space-y-3 text-sm mb-4">
+                                <div className="flex items-center gap-3 p-2 rounded-lg bg-blue-50/50 hover:bg-blue-50 transition-colors">
+                                    <div className="p-2 rounded-lg bg-blue-100">
+                                        <UserCheck className="w-4 h-4 text-blue-600" />
+                                    </div>
+                                    <div>
+                                        <span className="text-xs text-gray-500">Giáo viên</span>
+                                        <p className="font-semibold text-gray-900">{classItem.teacherName}</p>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-2 text-gray-600">
-                                    <Users className="w-4 h-4" />
-                                    <span className="font-semibold">Học sinh:</span>{" "}
-                                    {classItem.studentCount}/{classItem.maxStudents}
+                                <div className="flex items-center gap-3 p-2 rounded-lg bg-purple-50/50 hover:bg-purple-50 transition-colors">
+                                    <div className="p-2 rounded-lg bg-purple-100">
+                                        <Users className="w-4 h-4 text-purple-600" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <span className="text-xs text-gray-500">Học sinh</span>
+                                        <div className="flex items-center justify-between">
+                                            <p className="font-semibold text-gray-900">
+                                                {classItem.studentCount}/{classItem.maxStudents}
+                                            </p>
+                                            <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all"
+                                                    style={{ width: `${(classItem.studentCount / classItem.maxStudents) * 100}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 {classItem.schedule && (
-                                    <p className="text-gray-600">📅 {classItem.schedule}</p>
+                                    <p className="text-gray-600 text-xs bg-amber-50 p-2 rounded-lg border-l-2 border-amber-400">
+                                        📅 {classItem.schedule}
+                                    </p>
                                 )}
                                 {classItem.description && (
-                                    <p className="text-gray-500 text-xs line-clamp-2">
+                                    <p className="text-gray-500 text-xs line-clamp-2 italic">
                                         {classItem.description}
                                     </p>
                                 )}
                             </div>
 
-                            <div className="space-y-2 mt-4">
+                            <div className="space-y-2 pt-3 border-t border-gray-100">
                                 <Link
                                     href={`/admin/classes/${classItem.id}/enroll`}
                                     className="block"
@@ -360,9 +390,9 @@ export default function AdminClassesPage() {
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        className="w-full hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600"
+                                        className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border-indigo-200 text-indigo-700 font-semibold"
                                     >
-                                        <UserPlus className="w-4 h-4 mr-1" />
+                                        <UserPlus className="w-4 h-4 mr-2" />
                                         Gán Học Sinh
                                     </Button>
                                 </Link>
@@ -371,19 +401,19 @@ export default function AdminClassesPage() {
                                         variant="outline"
                                         size="sm"
                                         onClick={() => openEdit(classItem)}
-                                        className="flex-1"
+                                        className="flex-1 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-700"
                                     >
                                         <Edit className="w-4 h-4 mr-1" />
                                         Sửa
                                     </Button>
                                     <Button
-                                        variant="destructive"
+                                        variant="outline"
                                         size="sm"
                                         onClick={() => {
                                             setDeleteTarget(classItem);
                                             setIsDeleteOpen(true);
                                         }}
-                                        className="flex-1"
+                                        className="flex-1 hover:bg-red-50 hover:border-red-300 hover:text-red-700"
                                     >
                                         <Trash className="w-4 h-4 mr-1" />
                                         Xóa

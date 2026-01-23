@@ -163,7 +163,7 @@ export default async function ClassDetailPage({ params }: PageProps) {
   const activities = detail.activities ?? [];
 
   return (
-    <div className="min-h-screen bg-gray-50/50 pb-12">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50/30 via-purple-50/20 to-pink-50/30 pb-12">
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8 animate-in fade-in duration-500">
         <nav className="flex items-center text-sm font-medium text-gray-500 mb-8" aria-label="Breadcrumb">
           <Link href="/" className="hover:text-indigo-600 transition-colors">
@@ -394,15 +394,15 @@ export default async function ClassDetailPage({ params }: PageProps) {
             </div>
 
             {/* Recent Activity */}
-            <Card className="border-0 shadow-md overflow-hidden">
-              <CardHeader className="bg-gray-50/50 border-b border-gray-100 pb-4">
-                <div className="flex items-center gap-2">
-                  <div className="bg-rose-100 p-2 rounded-lg">
-                    <Clock className="w-5 h-5 text-rose-600" />
+            <Card className="overflow-hidden border-none shadow-xl bg-white/50 backdrop-blur-sm">
+              <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-md">
+                    <Clock className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">Hoạt động gần đây</CardTitle>
-                    <CardDescription>Cập nhật mới nhất của lớp học</CardDescription>
+                    <CardTitle className="text-xl">Hoạt động gần đây</CardTitle>
+                    <CardDescription className="text-purple-100">Cập nhật mới nhất của lớp học</CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -452,18 +452,18 @@ export default async function ClassDetailPage({ params }: PageProps) {
             </Card>
 
             {/* Students List */}
-            <Card className="border-0 shadow-md">
-              <CardHeader className="bg-gray-50/50 border-b border-gray-100 flex flex-row items-center justify-between pb-4">
-                <div className="flex items-center gap-2">
-                  <div className="bg-indigo-100 p-2 rounded-lg">
-                    <Users className="w-5 h-5 text-indigo-600" />
+            <Card className="overflow-hidden border-none shadow-xl bg-white/50 backdrop-blur-sm">
+              <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 flex flex-row items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-md">
+                    <Users className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">Danh sách học viên</CardTitle>
-                    <CardDescription>{studentCount} học viên đã tham gia</CardDescription>
+                    <CardTitle className="text-xl">Danh sách học viên</CardTitle>
+                    <CardDescription className="text-blue-100">{studentCount} học viên đã tham gia</CardDescription>
                   </div>
                 </div>
-                <Badge variant="outline" className="text-indigo-600 border-indigo-200">
+                <Badge className="bg-white/20 text-white border-0 backdrop-blur-md">
                   {studentCount}/{detail.maxStudents}
                 </Badge>
               </CardHeader>
@@ -501,15 +501,15 @@ export default async function ClassDetailPage({ params }: PageProps) {
             </Card>
 
             {/* Recent Messages */}
-            <Card className="border-0 shadow-md overflow-hidden">
-              <CardHeader className="bg-gray-50/50 border-b border-gray-100 pb-4">
-                <div className="flex items-center gap-2">
-                  <div className="bg-blue-100 p-2 rounded-lg">
-                    <MessageCircle className="w-5 h-5 text-blue-600" />
+            <Card className="overflow-hidden border-none shadow-xl bg-white/50 backdrop-blur-sm">
+              <CardHeader className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white p-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-md">
+                    <MessageCircle className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">Thảo luận mới nhất</CardTitle>
-                    <CardDescription>Tin nhắn từ phòng chat</CardDescription>
+                    <CardTitle className="text-xl">Thảo luận mới nhất</CardTitle>
+                    <CardDescription className="text-cyan-100">Tin nhắn từ phòng chat</CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -539,16 +539,16 @@ export default async function ClassDetailPage({ params }: PageProps) {
 
           <div className="space-y-8">
             {/* Assignments Column */}
-            <Card className="border-0 shadow-md h-fit sticky top-6">
-              <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
+            <Card className="overflow-hidden border-none shadow-xl bg-white/50 backdrop-blur-sm">
+              <CardHeader className="bg-gradient-to-r from-orange-500 to-amber-500 text-white p-6">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-orange-100 p-2 rounded-lg">
-                      <BookOpen className="w-5 h-5 text-orange-600" />
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white/20 rounded-lg backdrop-blur-md">
+                      <BookOpen className="w-6 h-6 text-white" />
                     </div>
-                    <CardTitle className="text-lg">Bài tập</CardTitle>
+                    <CardTitle className="text-xl">Bài tập</CardTitle>
                   </div>
-                  <Link href="/assignments" className="text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:underline">
+                  <Link href="/assignments" className="text-sm font-medium text-white hover:text-white/80 hover:underline">
                     Xem tất cả
                   </Link>
                 </div>
@@ -613,16 +613,16 @@ export default async function ClassDetailPage({ params }: PageProps) {
             </Card>
 
             {/* Files Column */}
-            <Card className="border-0 shadow-md">
-              <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
+            <Card className="overflow-hidden border-none shadow-xl bg-white/50 backdrop-blur-sm">
+              <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-6">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-teal-100 p-2 rounded-lg">
-                      <FolderOpen className="w-5 h-5 text-teal-600" />
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white/20 rounded-lg backdrop-blur-md">
+                      <FolderOpen className="w-6 h-6 text-white" />
                     </div>
-                    <CardTitle className="text-lg">Tài liệu</CardTitle>
+                    <CardTitle className="text-xl">Tài liệu</CardTitle>
                   </div>
-                  <Link href="/files" className="text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:underline">
+                  <Link href="/files" className="text-sm font-medium text-white hover:text-white/80 hover:underline">
                     Xem thêm
                   </Link>
                 </div>

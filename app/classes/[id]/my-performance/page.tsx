@@ -7,6 +7,8 @@ import { Trophy, TrendingUp, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { MeshGradientHeader } from "@/components/ui/mesh-gradient-header";
+import { ClassBreadcrumb } from "@/components/class-breadcrumb";
+import { useState, useEffect } from "react";
 
 export default function StudentAnalyticsPage({
   params,
@@ -15,6 +17,14 @@ export default function StudentAnalyticsPage({
 }) {
   const classId = parseInt(params.id);
   const { user } = useSession();
+  const [className, setClassName] = useState<string>("");
+
+  useEffect(() => {
+    fetch(`/api/classes/${classId}`)
+      .then(res => res.json())
+      .then(data => setClassName(data.name || `Lớp ${classId}`))
+      .catch(() => setClassName(`Lớp ${classId}`));
+  }, [classId]);
 
   if (!user) {
     return <div className="text-center py-8">Loading...</div>;
@@ -22,6 +32,13 @@ export default function StudentAnalyticsPage({
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl space-y-6 animate-in fade-in duration-500">
+      {/* Breadcrumb Navigation */}
+      <ClassBreadcrumb
+        classId={classId}
+        className={className || `Lớp ${classId}`}
+        currentPage="Kết quả học tập"
+      />
+
       {/* Gradient Header Banner */}
       <MeshGradientHeader>
         <div className="flex flex-col md:flex-row justify-between items-start gap-6">

@@ -643,12 +643,19 @@ export default async function Dashboard() {
         </div>
 
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Hoạt động gần đây</CardTitle>
-              <CardDescription>Cập nhật từ hệ thống</CardDescription>
+          <Card className="overflow-hidden border-none shadow-xl bg-white/50 backdrop-blur-sm">
+            <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-lg backdrop-blur-md">
+                  <Bell className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl">Hoạt động gần đây</CardTitle>
+                  <CardDescription className="text-purple-100">Cập nhật từ hệ thống</CardDescription>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-6 space-y-4">
               {activities.map((activity, idx) => {
                 const Icon = activity.icon;
                 return (
@@ -668,11 +675,19 @@ export default async function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Tài liệu mới chia sẻ</CardTitle>
+          <Card className="overflow-hidden border-none shadow-xl bg-white/50 backdrop-blur-sm">
+            <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-lg backdrop-blur-md">
+                  <FileText className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl">Tài liệu mới chia sẻ</CardTitle>
+                  <CardDescription className="text-green-100">Tài liệu học tập mới nhất</CardDescription>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="p-6 space-y-3">
               {recentFiles.length === 0 ? (
                 <p className="text-sm text-gray-500">
                   Chưa có tài liệu nào được tải lên.
@@ -702,11 +717,17 @@ export default async function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="overflow-hidden border-none shadow-lg bg-gradient-to-br from-white to-gray-50">
-            <CardHeader className="border-b border-gray-100 bg-white/50 backdrop-blur-sm pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg text-gray-800">
-                <span className="text-2xl">🔗</span> Liên kết nhanh
-              </CardTitle>
+          <Card className="overflow-hidden border-none shadow-xl bg-white/50 backdrop-blur-sm">
+            <CardHeader className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white p-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-lg backdrop-blur-md">
+                  <Settings className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl">Liên kết nhanh</CardTitle>
+                  <CardDescription className="text-indigo-100">Truy cập nhanh các chức năng</CardDescription>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="p-4">
               <div className="grid grid-cols-1 gap-2">

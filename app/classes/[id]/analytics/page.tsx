@@ -2,7 +2,7 @@ import { ClassPerformanceDashboard, AtRiskStudentsAlert } from "@/components/ana
 import { getCurrentSession } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { getClassDetail } from "@/lib/actions/classes";
-import { CustomBreadcrumb } from "@/components/custom-breadcrumb";
+import { ClassBreadcrumb } from "@/components/class-breadcrumb";
 import { ArrowLeft, BarChart3, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,13 @@ export default async function ClassAnalyticsPage({ params }: { params: { id: str
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl space-y-8 animate-in fade-in duration-500">
+      {/* Breadcrumb Navigation */}
+      <ClassBreadcrumb
+        classId={classId}
+        className={classDetail.name}
+        currentPage="Phân tích"
+      />
+
       {/* Gradient Header Banner */}
       <MeshGradientHeader>
         <div className="flex flex-col md:flex-row justify-between items-start gap-6">
@@ -52,14 +59,6 @@ export default async function ClassAnalyticsPage({ params }: { params: { id: str
           </div>
         </div>
       </MeshGradientHeader>
-
-      <CustomBreadcrumb
-        items={[
-          { label: "Lớp học", href: "/classes" },
-          { label: classDetail.name, href: `/classes/${classId}` },
-          { label: "Phân tích" },
-        ]}
-      />
 
       {/* At-Risk Students Alert */}
       <AtRiskStudentsAlert classId={classId} />

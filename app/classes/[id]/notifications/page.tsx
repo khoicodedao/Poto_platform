@@ -35,12 +35,14 @@ import {
   X,
 } from "lucide-react";
 import { MeshGradientHeader } from "@/components/ui/mesh-gradient-header";
+import { ClassBreadcrumb } from "@/components/class-breadcrumb";
 
 export default function ClassNotificationsPage() {
   const params = useParams();
   const classId = parseInt(params.id as string);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [className, setClassName] = useState<string>("");
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     title: "",
@@ -49,6 +51,14 @@ export default function ClassNotificationsPage() {
     sentVia: "app",
     sendToZalo: false,
     imageUrl: "", // New field for image
+  });
+
+  // Fetch class name
+  useState(() => {
+    fetch(`/api/classes/${classId}`)
+      .then(res => res.json())
+      .then(data => setClassName(data.name || `Lớp ${classId}`))
+      .catch(() => setClassName(`Lớp ${classId}`));
   });
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -147,7 +157,14 @@ export default function ClassNotificationsPage() {
   };
 
   return (
-    <div className="container mx-auto p-6 pt-4 space-y-6 animate-in fade-in duration-500">
+    <div className="container mx-auto px-4 py-8 max-w-7xl space-y-6 animate-in fade-in duration-500">
+      {/* Breadcrumb Navigation */}
+      <ClassBreadcrumb
+        classId={classId}
+        className={className || `Lớp ${classId}`}
+        currentPage="Thông báo"
+      />
+
       {/* Gradient Header Banner */}
       <MeshGradientHeader>
         <div className="flex flex-col md:flex-row justify-between items-start gap-6">

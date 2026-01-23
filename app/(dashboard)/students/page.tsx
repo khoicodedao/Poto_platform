@@ -43,6 +43,7 @@ import {
     UserPlus,
 } from "lucide-react";
 import { BulkUpdateZaloIdsDialog, SelectFollowerDialog } from "@/components/zalo";
+import { MeshGradientHeader } from "@/components/ui/mesh-gradient-header";
 
 type Student = {
     id: number;
@@ -347,52 +348,93 @@ export default function StudentsManagementPage() {
     }
 
     return (
-        <div className="container mx-auto space-y-6 p-6">
+        <div className="container mx-auto px-4 py-8 max-w-7xl space-y-6 animate-in fade-in duration-500">
             {/* Header */}
-            <div>
-                <h1 className="text-3xl font-bold">Quản lý Học viên</h1>
-                <p className="text-muted-foreground">
-                    Quản lý thông tin học viên và Zalo ID
-                </p>
-            </div>
+            <MeshGradientHeader>
+                <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
+                                <Users className="w-6 h-6 text-white" />
+                            </div>
+                            <h1 className="text-3xl font-bold text-white drop-shadow-lg">
+                                Quản lý Học viên
+                            </h1>
+                        </div>
+                        <p className="text-white/90 text-lg font-medium">
+                            Quản lý thông tin học viên và Zalo ID
+                        </p>
+                    </div>
+                </div>
+            </MeshGradientHeader>
 
             {/* Stats */}
             <div className="grid gap-4 md:grid-cols-3">
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium">Tổng học viên</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.total}</div>
+                <Card className="overflow-hidden border shadow-sm hover:shadow-md transition-shadow bg-white">
+                    <CardContent className="p-6">
+                        <div className="flex items-start gap-4">
+                            <div className="p-3 rounded-xl bg-blue-50 border border-blue-100">
+                                <Users className="h-6 w-6 text-blue-600" />
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-2xl font-bold text-gray-900">{stats.total}</h3>
+                                <p className="text-sm text-gray-600 mt-1">Tổng học viên</p>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium">Đã kết nối Zalo</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-green-600">{stats.connected}</div>
+                <Card className="overflow-hidden border shadow-sm hover:shadow-md transition-shadow bg-white">
+                    <CardContent className="p-6">
+                        <div className="flex items-start gap-4">
+                            <div className="p-3 rounded-xl bg-green-50 border border-green-100">
+                                <CheckCircle2 className="h-6 w-6 text-green-600" />
+                            </div>
+                            <div className="flex-1">
+                                <div className="flex items-baseline justify-between">
+                                    <h3 className="text-2xl font-bold text-gray-900">{stats.connected}</h3>
+                                    <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200">
+                                        {stats.total > 0 ? ((stats.connected / stats.total) * 100).toFixed(0) : 0}%
+                                    </Badge>
+                                </div>
+                                <p className="text-sm text-gray-600 mt-1">Đã kết nối Zalo</p>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium">Chưa kết nối</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-orange-600">{stats.notConnected}</div>
+                <Card className="overflow-hidden border shadow-sm hover:shadow-md transition-shadow bg-white">
+                    <CardContent className="p-6">
+                        <div className="flex items-start gap-4">
+                            <div className="p-3 rounded-xl bg-orange-50 border border-orange-100">
+                                <XCircle className="h-6 w-6 text-orange-600" />
+                            </div>
+                            <div className="flex-1">
+                                <div className="flex items-baseline justify-between">
+                                    <h3 className="text-2xl font-bold text-gray-900">{stats.notConnected}</h3>
+                                    <Badge variant="outline" className="ml-2 bg-orange-50 text-orange-700 border-orange-200">
+                                        {stats.total > 0 ? ((stats.notConnected / stats.total) * 100).toFixed(0) : 0}%
+                                    </Badge>
+                                </div>
+                                <p className="text-sm text-gray-600 mt-1">Chưa kết nối</p>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
 
             {/* Filters & Actions */}
-            <Card>
-                <CardHeader>
+            <Card className="border-l-4 border-l-purple-500 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <CardHeader className="bg-gradient-to-br from-purple-50/50 to-pink-50/30 border-b border-gray-100">
                     <div className="flex items-center justify-between">
-                        <CardTitle>Danh sách học viên</CardTitle>
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 shadow-md">
+                                <Users className="h-5 w-5 text-white" />
+                            </div>
+                            <CardTitle className="text-xl">Danh sách học viên</CardTitle>
+                        </div>
                         <BulkUpdateZaloIdsDialog />
                     </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 pt-6">
                     {/* Search & Filter */}
                     <div className="flex gap-4">
                         <div className="relative flex-1">
@@ -408,18 +450,21 @@ export default function StudentsManagementPage() {
                             <Button
                                 variant={filterStatus === "all" ? "default" : "outline"}
                                 onClick={() => setFilterStatus("all")}
+                                className={filterStatus === "all" ? "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700" : ""}
                             >
                                 Tất cả
                             </Button>
                             <Button
                                 variant={filterStatus === "connected" ? "default" : "outline"}
                                 onClick={() => setFilterStatus("connected")}
+                                className={filterStatus === "connected" ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700" : ""}
                             >
                                 Đã kết nối
                             </Button>
                             <Button
                                 variant={filterStatus === "not_connected" ? "default" : "outline"}
                                 onClick={() => setFilterStatus("not_connected")}
+                                className={filterStatus === "not_connected" ? "bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700" : ""}
                             >
                                 Chưa kết nối
                             </Button>
@@ -432,15 +477,15 @@ export default function StudentsManagementPage() {
                             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                         </div>
                     ) : (
-                        <div className="rounded-lg border">
+                        <div className="rounded-lg border overflow-hidden">
                             <Table>
-                                <TableHeader>
+                                <TableHeader className="bg-gradient-to-r from-gray-50 to-purple-50/30">
                                     <TableRow>
-                                        <TableHead>Tên</TableHead>
-                                        <TableHead>Email</TableHead>
-                                        <TableHead>Zalo User ID</TableHead>
-                                        <TableHead>Trạng thái</TableHead>
-                                        <TableHead className="text-right">Thao tác</TableHead>
+                                        <TableHead className="font-semibold">Tên</TableHead>
+                                        <TableHead className="font-semibold">Email</TableHead>
+                                        <TableHead className="font-semibold">Zalo User ID</TableHead>
+                                        <TableHead className="font-semibold">Trạng thái</TableHead>
+                                        <TableHead className="text-right font-semibold">Thao tác</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -452,28 +497,28 @@ export default function StudentsManagementPage() {
                                         </TableRow>
                                     ) : (
                                         filteredStudents.map((student) => (
-                                            <TableRow key={student.id}>
+                                            <TableRow key={student.id} className="hover:bg-purple-50/30 transition-colors">
                                                 <TableCell className="font-medium">{student.name}</TableCell>
                                                 <TableCell className="text-sm text-muted-foreground">
                                                     {student.email}
                                                 </TableCell>
                                                 <TableCell>
                                                     {student.zaloUserId ? (
-                                                        <code className="rounded bg-muted px-2 py-1 text-xs">
+                                                        <code className="rounded bg-gradient-to-r from-blue-50 to-indigo-50 border border-indigo-200 px-2 py-1 text-xs text-indigo-700 font-mono">
                                                             {student.zaloUserId.substring(0, 15)}...
                                                         </code>
                                                     ) : (
-                                                        <span className="text-sm text-muted-foreground">Chưa có</span>
+                                                        <span className="text-sm text-muted-foreground italic">Chưa có</span>
                                                     )}
                                                 </TableCell>
                                                 <TableCell>
                                                     {student.zaloUserId ? (
-                                                        <Badge variant="default" className="gap-1">
+                                                        <Badge className="gap-1 bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 border-0 text-white shadow-sm">
                                                             <CheckCircle2 className="h-3 w-3" />
                                                             Đã kết nối
                                                         </Badge>
                                                     ) : (
-                                                        <Badge variant="secondary" className="gap-1">
+                                                        <Badge variant="secondary" className="gap-1 bg-orange-100 text-orange-700 border-orange-200">
                                                             <XCircle className="h-3 w-3" />
                                                             Chưa kết nối
                                                         </Badge>
@@ -485,6 +530,7 @@ export default function StudentsManagementPage() {
                                                             size="sm"
                                                             variant="outline"
                                                             onClick={() => handleEditZaloId(student)}
+                                                            className="hover:bg-amber-50 hover:border-amber-300 hover:text-amber-700"
                                                         >
                                                             <Edit className="h-3 w-3 mr-1" />
                                                             Sửa ID
@@ -493,6 +539,7 @@ export default function StudentsManagementPage() {
                                                             size="sm"
                                                             variant="outline"
                                                             onClick={() => handleSelectFromFollowers(student)}
+                                                            className="hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700"
                                                         >
                                                             <UserPlus className="h-3 w-3 mr-1" />
                                                             Chọn Follower
@@ -501,6 +548,7 @@ export default function StudentsManagementPage() {
                                                             <Button
                                                                 size="sm"
                                                                 onClick={() => handleSendMessage(student)}
+                                                                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
                                                             >
                                                                 <Send className="h-3 w-3 mr-1" />
                                                                 Gửi tin

@@ -9,14 +9,17 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft, BookOpen, FileText, Plus } from "lucide-react";
 import { MeshGradientHeader } from "@/components/ui/mesh-gradient-header";
+import { ClassBreadcrumb } from "@/components/class-breadcrumb";
 
 export default function ClassAssignmentsPage() {
   const params = useParams();
   const classId = parseInt(params.id as string);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [className, setClassName] = useState<string>("");
 
   useEffect(() => {
     fetchUserRole();
+    fetchClassName();
   }, []);
 
   const fetchUserRole = async () => {
@@ -31,10 +34,29 @@ export default function ClassAssignmentsPage() {
     }
   };
 
+  const fetchClassName = async () => {
+    try {
+      const res = await fetch(`/api/classes/${classId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setClassName(data.name || `Lớp ${classId}`);
+      }
+    } catch (e) {
+      console.error("Failed to fetch class name:", e);
+    }
+  };
+
   const isTeacher = userRole && userRole !== "student";
 
   return (
-    <div className="container mx-auto p-6 pt-4 space-y-6 animate-in fade-in duration-500">
+    <div className="container mx-auto px-4 py-8 max-w-7xl space-y-6 animate-in fade-in duration-500">
+      {/* Breadcrumb Navigation */}
+      <ClassBreadcrumb
+        classId={classId}
+        className={className || `Lớp ${classId}`}
+        currentPage="Bài tập"
+      />
+
       {/* Gradient Header Banner */}
       <MeshGradientHeader>
         <div className="flex flex-col md:flex-row justify-between items-start gap-6">

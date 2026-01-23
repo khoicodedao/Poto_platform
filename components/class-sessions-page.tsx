@@ -46,6 +46,7 @@ import {
 import { ClassSessionForm } from "@/components/class-session-form";
 import { calculateSessionStatus } from "@/lib/utils/session-status";
 import { MeshGradientHeader } from "@/components/ui/mesh-gradient-header";
+import { ClassBreadcrumb } from "@/components/class-breadcrumb";
 
 type ClassSession = {
   id: number;
@@ -182,6 +183,13 @@ export function ClassSessionsPage({
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
+      {/* Breadcrumb Navigation */}
+      <ClassBreadcrumb
+        classId={classId}
+        className={className}
+        currentPage="Buổi học"
+      />
+
       {/* Header with Modern Mesh Gradient Background */}
       <MeshGradientHeader>
         <div className="flex flex-col md:flex-row justify-between items-start gap-6">

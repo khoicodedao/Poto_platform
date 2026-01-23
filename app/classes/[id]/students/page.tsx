@@ -1,18 +1,35 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { useState, useEffect } from "react";
 import { StudentsList } from "@/components/students-list";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft, Users, GraduationCap } from "lucide-react";
 import { MeshGradientHeader } from "@/components/ui/mesh-gradient-header";
+import { ClassBreadcrumb } from "@/components/class-breadcrumb";
 
 export default function ClassStudentsPage() {
   const params = useParams();
   const classId = parseInt(params.id as string);
+  const [className, setClassName] = useState<string>("");
+
+  useEffect(() => {
+    fetch(`/api/classes/${classId}`)
+      .then(res => res.json())
+      .then(data => setClassName(data.name || `Lớp ${classId}`))
+      .catch(() => setClassName(`Lớp ${classId}`));
+  }, [classId]);
 
   return (
-    <div className="container mx-auto p-6 pt-4 space-y-6 animate-in fade-in duration-500">
+    <div className="container mx-auto px-4 py-8 max-w-7xl space-y-6 animate-in fade-in duration-500">
+      {/* Breadcrumb Navigation */}
+      <ClassBreadcrumb
+        classId={classId}
+        className={className || `Lớp ${classId}`}
+        currentPage="Học viên"
+      />
+
       {/* Gradient Header Banner */}
       <MeshGradientHeader>
         <div className="flex justify-between items-start">

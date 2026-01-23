@@ -19,6 +19,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, Trash2, Sparkles, MessageSquare, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
+import { ClassBreadcrumb } from "@/components/class-breadcrumb";
+import { MeshGradientHeader } from "@/components/ui/mesh-gradient-header";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 interface Topic {
     id: number;
@@ -36,6 +40,7 @@ export default function AITopicsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
+    const [className, setClassName] = useState<string>("");
 
     const [formData, setFormData] = useState({
         title: "",
@@ -46,6 +51,10 @@ export default function AITopicsPage() {
 
     useEffect(() => {
         fetchTopics();
+        fetch(`/api/classes/${classId}`)
+            .then(res => res.json())
+            .then(data => setClassName(data.name || `Lớp ${classId}`))
+            .catch(() => setClassName(`Lớp ${classId}`));
     }, [classId]);
 
     const fetchTopics = async () => {
@@ -159,22 +168,43 @@ export default function AITopicsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 p-6">
+        <div className="container mx-auto px-4 py-8 max-w-7xl space-y-6 animate-in fade-in duration-500">
+            {/* Breadcrumb Navigation */}
+            <ClassBreadcrumb
+                classId={parseInt(classId)}
+                className={className || `Lớp ${classId}`}
+                currentPage="AI Learning Topics"
+            />
+
             {/* Header */}
-            <div className="max-w-7xl mx-auto mb-8">
-                <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 rounded-3xl p-8 text-white shadow-2xl">
-                    <div className="flex items-center gap-3 mb-2">
-                        <Sparkles className="h-8 w-8" />
-                        <h1 className="text-3xl font-bold">AI Learning Topics</h1>
+            <MeshGradientHeader>
+                <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
+                                <Sparkles className="h-6 w-6 text-white" />
+                            </div>
+                            <h1 className="text-3xl font-bold text-white drop-shadow-lg">
+                                AI Learning Topics
+                            </h1>
+                        </div>
+                        <p className="text-white/90 text-lg">
+                            Tạo và quản lý các chủ đề để học sinh trao đổi với AI
+                        </p>
                     </div>
-                    <p className="text-purple-100">
-                        Tạo và quản lý các chủ đề để học sinh trao đổi với AI
-                    </p>
+                    <Link href={`/classes/${classId}`}>
+                        <Button
+                            variant="ghost"
+                            className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm transition-all duration-200"
+                        >
+                            <ArrowLeft className="mr-2 h-4 w-4" /> Quay Lại
+                        </Button>
+                    </Link>
                 </div>
-            </div>
+            </MeshGradientHeader>
 
             {/* Content */}
-            <div className="max-w-7xl mx-auto">
+            <div>
                 <div className="flex justify-between items-center mb-6">
                     <div>
                         <h2 className="text-2xl font-semibold text-gray-800">Danh sách chủ đề</h2>
@@ -308,8 +338,8 @@ export default function AITopicsPage() {
                             <Card
                                 key={topic.id}
                                 className={`group hover:shadow-xl transition-all duration-300 border-2 ${topic.isActive
-                                        ? "border-purple-200 hover:border-purple-400"
-                                        : "border-gray-200 bg-gray-50"
+                                    ? "border-purple-200 hover:border-purple-400"
+                                    : "border-gray-200 bg-gray-50"
                                     }`}
                             >
                                 <CardHeader>
